@@ -16,13 +16,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.aqualuminus_rebuild.data.models.AquaLuminusDevice
 import com.example.aqualuminus_rebuild.ui.screens.dashboard.components.DeviceListCard
 import com.example.aqualuminus_rebuild.ui.screens.dashboard.components.HeaderCard
+import com.example.aqualuminus_rebuild.ui.screens.dashboard.components.QuickActionCard
 
 @Composable
 fun AquaLuminusDashboardScreen(
     aquaLuminusDashboardViewModel: AquaLuminusDashboardViewModel = viewModel(),
     onLoggedOut: () -> Unit,
     onAddDevice: () -> Unit,
-    onDeviceClick: (String) -> Unit
+    onDeviceClick: (String) -> Unit,
+    onScheduleCleanClick: () -> Unit = {}
 ) {
     val uiState by aquaLuminusDashboardViewModel.uiState.collectAsState()
     val devices by aquaLuminusDashboardViewModel.devices.collectAsState()
@@ -48,8 +50,13 @@ fun AquaLuminusDashboardScreen(
         devices = devices,
         onAddDevice = onAddDevice,
         onDeviceClick = onDeviceClick,
-        onRefreshDevices = { aquaLuminusDashboardViewModel.refreshDevices() }
-    )
+        onRefreshDevices = { aquaLuminusDashboardViewModel.refreshDevices() },
+
+        /* ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ QuickActionCard ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ */
+
+        onScheduleCleanClick = onScheduleCleanClick
+
+        )
 }
 
 @Composable
@@ -64,8 +71,12 @@ private fun DashboardContent(
     devices: List<AquaLuminusDevice>,
     onAddDevice: () -> Unit,
     onDeviceClick: (String) -> Unit,
-    onRefreshDevices: () -> Unit
-) {
+    onRefreshDevices: () -> Unit,
+
+    /* ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ QuickActionCard ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ */
+    onScheduleCleanClick: () -> Unit
+
+    ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -85,6 +96,10 @@ private fun DashboardContent(
             onAddDevice = onAddDevice,
             onDeviceClick = onDeviceClick,
             onRefresh = onRefreshDevices
+        )
+
+        QuickActionCard(
+            onScheduleCleanClick = onScheduleCleanClick
         )
     }
 }

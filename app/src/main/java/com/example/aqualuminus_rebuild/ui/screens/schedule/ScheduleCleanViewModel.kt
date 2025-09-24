@@ -1,4 +1,280 @@
 package com.example.aqualuminus_rebuild.ui.screens.schedule
 
-class ScheduleCleanViewModel {
+import android.content.Context
+import android.util.Log
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.example.aqualuminus_rebuild.data.factory.ServiceFactory
+import com.example.aqualuminus_rebuild.data.repository.ScheduleRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.UUID
+import kotlin.collections.filter
+import kotlin.collections.find
+import kotlin.collections.map
+import kotlin.jvm.java
+
+class ScheduleCleanViewModel(
+    private val repository: ScheduleRepository = ScheduleRepository(),
+    private val context: Context
+) : ViewModel() {
+
+    // Get the schedule service from our factory
+    private val scheduleService = ServiceFactory.getScheduleService(context)
+    private val timeCalculator = ServiceFactory.getTimeCalculator()
+
+    private val _schedules = MutableStateFlow<List<SavedSchedule>>(emptyList())
+    val schedules: StateFlow<List<SavedSchedule>> = _schedules.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    private val _currentSchedule = MutableStateFlow<SavedSchedule?>(null)
+    val currentSchedule: StateFlow<SavedSchedule?> = _currentSchedule.asStateFlow()
+
+    private val _isLoadingSchedule = MutableStateFlow(false)
+    val isLoadingSchedule: StateFlow<Boolean> = _isLoadingSchedule.asStateFlow()
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
+
+    private val _saveResult = MutableStateFlow<SaveResult?>(null)
+    val saveResult: StateFlow<SaveResult?> = _saveResult.asStateFlow()
+
+    init {
+        loadSchedules()
+        observeSchedules()
+    }
+
+    fun saveSchedule(schedule: SavedSchedule) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            val scheduleWithId = schedule.copy(
+                id = if (schedule.id.isEmpty()) UUID.randomUUID().toString() else schedule.id
+            )
+
+            repository.saveSchedule(scheduleWithId)
+                .onSuccess {
+                    _saveResult.value = SaveResult.Success
+                    _error.value = null
+
+                    // Schedule the UV cleaning task using the new service
+                    if (scheduleWithId.isActive) {
+                        scheduleService.scheduleUVCleaning(context, scheduleWithId)
+                    }
+                }
+                .onFailure { exception ->
+                    _saveResult.value = SaveResult.Error(exception.message ?: "Failed to save schedule")
+                    _error.value = exception.message
+                }
+
+            _isLoading.value = false
+        }
+    }
+
+    fun loadSchedules() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            repository.getSchedules()
+                .onSuccess { scheduleList ->
+                    _schedules.value = scheduleList.map { schedule ->
+                        schedule.copy(nextRun = calculateNextRun(schedule))
+                    }
+                    _error.value = null
+
+                    // Reschedule all active schedules using the new service
+                    scheduleService.rescheduleAll(context, scheduleList.filter { it.isActive })
+                }
+                .onFailure { exception ->
+                    _error.value = exception.message ?: "Failed to load schedules"
+                }
+
+            _isLoading.value = false
+        }
+    }
+
+    private fun observeSchedules() {
+        viewModelScope.launch {
+            repository.observeSchedules()
+                .catch { exception ->
+                    _error.value = exception.message ?: "Failed to observe schedules"
+                }
+                .collect { scheduleList ->
+                    _schedules.value = scheduleList.map { schedule ->
+                        schedule.copy(nextRun = calculateNextRun(schedule))
+                    }
+                }
+        }
+    }
+
+    fun loadSchedule(scheduleId: String) {
+        viewModelScope.launch {
+            try {
+                _isLoadingSchedule.value = true
+                _error.value = null
+
+                val schedule = repository.getScheduleById(scheduleId)
+                _currentSchedule.value = schedule
+
+                if (schedule == null) {
+                    _error.value = "Schedule not found"
+                }
+            } catch (e: Exception) {
+                Log.e("ScheduleViewModel", "Error loading schedule", e)
+                _error.value = e.message ?: "Unknown error occurred"
+                _currentSchedule.value = null
+            } finally {
+                _isLoadingSchedule.value = false
+            }
+        }
+    }
+
+    fun updateSchedule(schedule: SavedSchedule) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                _error.value = null
+
+                repository.updateSchedule(schedule)
+                    .onSuccess {
+                        _saveResult.value = SaveResult.Success
+                        _error.value = null
+
+                        // Cancel existing scheduled task and reschedule with new settings
+                        scheduleService.cancelSchedule(context, schedule.id)
+                        if (schedule.isActive) {
+                            scheduleService.scheduleUVCleaning(context, schedule)
+                        }
+
+                        // Refresh the schedules list
+                        loadSchedules()
+                    }
+                    .onFailure { exception ->
+                        _saveResult.value = SaveResult.Error(exception.message ?: "Failed to update schedule")
+                        _error.value = exception.message
+                    }
+
+            } catch (e: Exception) {
+                Log.e("ScheduleViewModel", "Error updating Schedule", e)
+                _saveResult.value = SaveResult.Error(e.message ?: "Failed to update Schedule")
+                _error.value = e.message
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun deleteSchedule(scheduleId: String) {
+        viewModelScope.launch {
+            // Cancel the scheduled task first
+            scheduleService.cancelSchedule(context, scheduleId)
+
+            repository.deleteSchedule(scheduleId)
+                .onFailure { exception ->
+                    _error.value = exception.message ?: "Failed to delete schedule"
+                }
+        }
+    }
+
+    fun clearCurrentSchedule() {
+        _currentSchedule.value = null
+    }
+
+    fun updateScheduleStatus(scheduleId: String, isActive: Boolean) {
+        viewModelScope.launch {
+            repository.updateScheduleStatus(scheduleId, isActive)
+                .onSuccess {
+                    val schedule = _schedules.value.find { it.id == scheduleId }
+                    if (schedule != null) {
+                        if (isActive) {
+                            // Schedule the task
+                            scheduleService.scheduleUVCleaning(context, schedule.copy(isActive = isActive))
+                        } else {
+                            // Cancel the task
+                            scheduleService.cancelSchedule(context, scheduleId)
+                        }
+                    }
+                }
+                .onFailure { exception ->
+                    _error.value = exception.message ?: "Failed to update schedule status"
+                }
+        }
+    }
+
+    private fun calculateNextRun(schedule: SavedSchedule): String {
+        if (!schedule.isActive) return "Paused"
+
+        try {
+            val nextRunTime = timeCalculator.calculateNextRunTime(schedule.days, schedule.time)
+            val currentTime = System.currentTimeMillis()
+
+            if (nextRunTime <= currentTime) return "Invalid schedule"
+
+            val calendar = Calendar.getInstance()
+            val nextRunCalendar = Calendar.getInstance().apply {
+                timeInMillis = nextRunTime
+            }
+
+            val daysDiff = ((nextRunTime - currentTime) / (24 * 60 * 60 * 1000)).toInt()
+            val (hour, minute) = timeCalculator.parseTime(schedule.time)
+
+            return when (daysDiff) {
+                0 -> "Today at ${formatTime(hour, minute)}"
+                1 -> "Tomorrow at ${formatTime(hour, minute)}"
+                else -> {
+                    val dayName = SimpleDateFormat("EEE", Locale.getDefault()).format(nextRunCalendar.time)
+                    "$dayName at ${formatTime(hour, minute)}"
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("ScheduleViewModel", "Error calculating next run", e)
+            return "Invalid schedule"
+        }
+    }
+
+    private fun formatTime(hour: Int, minute: Int): String {
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+        }
+        val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+        return timeFormat.format(calendar.time)
+    }
+
+    fun clearSaveResult() {
+        _saveResult.value = null
+    }
+
+    fun clearError() {
+        _error.value = null
+    }
+
+    sealed class SaveResult {
+        object Success : SaveResult()
+        data class Error(val message: String) : SaveResult()
+    }
+}
+
+class ScheduleCleanViewModelFactory(
+    private val repository: ScheduleRepository = ScheduleRepository(),
+    private val context: Context
+) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(ScheduleCleanViewModel::class.java)) {
+            return ScheduleCleanViewModel(repository, context) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
 }

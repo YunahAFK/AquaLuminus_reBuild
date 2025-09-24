@@ -1,6 +1,5 @@
 package com.example.aqualuminus_rebuild.ui.navigation
 
-import android.R.attr.type
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -18,6 +17,8 @@ import com.example.aqualuminus_rebuild.ui.screens.dashboard.AquaLuminusDashboard
 import com.example.aqualuminus_rebuild.ui.screens.iot.AddDeviceScreen
 import com.example.aqualuminus_rebuild.ui.screens.iot.DeviceControlScreen
 import com.example.aqualuminus_rebuild.ui.screens.iot.DeviceControlViewModel
+import com.example.aqualuminus_rebuild.ui.screens.schedule.ScheduleListScreen
+import com.example.aqualuminus_rebuild.ui.screens.schedule.ScheduleCleanScreen
 
 sealed class Screen(val route: String) {
     object Login : Screen ("login")
@@ -27,6 +28,9 @@ sealed class Screen(val route: String) {
     data object DeviceControl : Screen("device_control/{deviceId}") {
         fun createRoute(deviceId: String) = "device_control/$deviceId"
     }
+    object SchedulesList : Screen("schedules_list")
+    object ScheduleClean : Screen("schedule_clean")
+
 }
 
 @Composable
@@ -73,7 +77,8 @@ fun NavGraph(
                 aquaLuminusDashboardViewModel = dashboardViewModel,
                 onLoggedOut = { navController.navigate(Screen.Login.route) { popUpTo(0) } },
                 onAddDevice = { navController.navigate(Screen.AddDevice.route) },
-                onDeviceClick = { id -> navController.navigate(Screen.DeviceControl.createRoute(id)) }
+                onDeviceClick = { id -> navController.navigate(Screen.DeviceControl.createRoute(id)) },
+                onScheduleCleanClick = { navController.navigate(Screen.SchedulesList.route) }
             )
         }
 
@@ -104,6 +109,40 @@ fun NavGraph(
             DeviceControlScreen(
                 onBackClick = { navController.popBackStack() },
                 deviceControlViewModel = deviceControlViewModel
+            )
+        }
+
+        composable(Screen.SchedulesList.route) {
+            ScheduleListScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onCreateNewClick = {
+                    navController.navigate(Screen.ScheduleClean.route)
+                },
+                onEditScheduleClick = { scheduleId ->
+                    // navigate to edit screen with schedule ID
+                    navController.navigate("${Screen.ScheduleClean.route}?scheduleId=$scheduleId")
+                }
+            )
+        }
+
+        composable(
+            route = "${Screen.ScheduleClean.route}?scheduleId={scheduleId}",
+            arguments = listOf(
+                navArgument("scheduleId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val scheduleId = backStackEntry.arguments?.getString("scheduleId")
+            ScheduleCleanScreen(
+                scheduleId = scheduleId,
+                onBackClick = {
+                    navController.popBackStack()
+                }
             )
         }
     }
