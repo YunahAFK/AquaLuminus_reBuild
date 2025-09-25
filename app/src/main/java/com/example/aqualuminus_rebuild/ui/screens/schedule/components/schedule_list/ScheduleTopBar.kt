@@ -16,8 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleTopBar(
-    onBackClick: () -> Unit,
-    onCreateNewClick: () -> Unit
+    onBackClick: () -> Unit
 ) {
     TopAppBar(
         title = {
@@ -32,14 +31,6 @@ fun ScheduleTopBar(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back"
-                )
-            }
-        },
-        actions = {
-            IconButton(onClick = onCreateNewClick) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add Schedule"
                 )
             }
         },

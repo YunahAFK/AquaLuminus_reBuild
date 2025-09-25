@@ -76,8 +76,7 @@ fun ScheduleListScreen(
     Scaffold(
         topBar = {
             ScheduleTopBar(
-                onBackClick = onBackClick,
-                onCreateNewClick = onCreateNewClick
+                onBackClick = onBackClick
             )
         },
         floatingActionButton = {

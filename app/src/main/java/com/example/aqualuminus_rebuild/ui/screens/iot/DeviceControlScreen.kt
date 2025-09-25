@@ -90,9 +90,6 @@ fun DeviceControlScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent
-                )
             )
         }
     ) { paddingValues ->

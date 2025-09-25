@@ -82,9 +82,7 @@ fun AddDeviceScreen(
     val scope = rememberCoroutineScope()
 
     val context = LocalContext.current
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
-        rememberTopAppBarState()
-    )
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     var isScanning by remember { mutableStateOf(false) }
     var discoveredDevices by remember { mutableStateOf<List<DiscoveredDevice>>(emptyList()) }
