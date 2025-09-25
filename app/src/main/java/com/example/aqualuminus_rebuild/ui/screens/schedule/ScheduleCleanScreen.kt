@@ -39,10 +39,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.aqualuminus_rebuild.data.repository.DeviceRepository
 import com.example.aqualuminus_rebuild.ui.screens.schedule.SavedSchedule
 import com.example.aqualuminus_rebuild.ui.screens.schedule.ScheduleCleanViewModel
 import com.example.aqualuminus_rebuild.ui.screens.schedule.ScheduleCleanViewModelFactory
 import com.example.aqualuminus_rebuild.ui.screens.schedule.components.DaySelector
+import com.example.aqualuminus_rebuild.ui.screens.schedule.components.DeviceSelector
 import com.example.aqualuminus_rebuild.ui.screens.schedule.components.DurationPicker
 import com.example.aqualuminus_rebuild.ui.screens.schedule.components.ScheduleBottomBar
 import com.example.aqualuminus_rebuild.ui.screens.schedule.components.ScheduleNameInput
@@ -58,6 +60,8 @@ fun ScheduleCleanScreen(
     val viewModel: ScheduleCleanViewModel = viewModel(
         factory = ScheduleCleanViewModelFactory(context = context)
     )
+    val deviceRepository = DeviceRepository.getInstance(context)
+    val devices by deviceRepository.getAllDevices().collectAsState(initial = emptyList())
 
     val isEditMode = scheduleId != null
     val currentTime = Calendar.getInstance()
@@ -67,6 +71,7 @@ fun ScheduleCleanScreen(
     var selectedMinute by remember { mutableIntStateOf(currentTime.get(Calendar.MINUTE)) }
     var selectedAmPm by remember { mutableIntStateOf(if (currentTime.get(Calendar.AM_PM) == Calendar.AM) 0 else 1) }
     var selectedDays by remember { mutableStateOf(setOf<Int>()) }
+    var selectedDeviceId by remember { mutableStateOf<String?>(null) }
     var scheduleName by remember { mutableStateOf("") }
     var selectedDuration by remember { mutableIntStateOf(30) } // Default 30 minutes
 
@@ -92,6 +97,7 @@ fun ScheduleCleanScreen(
         currentSchedule?.let { schedule ->
             scheduleName = schedule.name
             selectedDuration = schedule.durationMinutes
+            selectedDeviceId = schedule.deviceId
 
             // parse time (stored as 24-hour format)
             val timeParts = schedule.time.split(":")
@@ -163,6 +169,7 @@ fun ScheduleCleanScreen(
 
         val schedule = SavedSchedule(
             id = scheduleId ?: "", // use existing ID for updates, empty for new schedules
+            deviceId = selectedDeviceId ?: "",
             name = scheduleName.ifBlank { "Untitled Schedule" },
             days = selectedDayNames,
             time = timeString,
@@ -172,6 +179,7 @@ fun ScheduleCleanScreen(
 
         Log.d("ScheduleClean", "Saving schedule (Edit mode: $isEditMode):")
         Log.d("ScheduleClean", "ID: ${schedule.id}")
+        Log.d("ScheduleClean", "Device ID: ${schedule.deviceId}")
         Log.d("ScheduleClean", "Time: $timeString (24-hour format)")
         Log.d("ScheduleClean", "Days: ${selectedDayNames.joinToString(", ")}")
         Log.d("ScheduleClean", "Name: ${schedule.name}")
@@ -244,6 +252,14 @@ fun ScheduleCleanScreen(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
+                DeviceSelector(
+                    devices = devices,
+                    selectedDeviceIds = setOf(selectedDeviceId).filterNotNull().toSet(),
+                    onDeviceSelected = { deviceId ->
+                        selectedDeviceId = if (selectedDeviceId == deviceId) null else deviceId
+                    }
+                )
+
                 DaySelector(
                     selectedDays = selectedDays,
                     onDaysChanged = { selectedDays = it }

@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 class UVLightRepository (private val context: Context) {
 
@@ -18,6 +20,13 @@ class UVLightRepository (private val context: Context) {
     private val _connectionStatus = MutableStateFlow("Disconnected")
     val connectionStatus: Flow<String> = _connectionStatus.asStateFlow()
 
+    fun setDevice(ipAddress: String, port: Int) {
+        val retrofit = Retrofit.Builder()
+            .baseUrl("http://$ipAddress:$port/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        uvLightService = retrofit.create(UVLightService::class.java)
+    }
 
     suspend fun turnOnUVLight(): Result<Boolean> {
         return executeUVLightCommand { uvLightService?.turnOn() }

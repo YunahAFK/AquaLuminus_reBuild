@@ -25,6 +25,7 @@ class ScheduleWorkManager(private val context: Context) {
     fun enqueueCleaningWork(schedule: SavedSchedule, delay: Long) {
         val inputData = Data.Builder()
             .putString("schedule_id", schedule.id)
+            .putString("device_id", schedule.deviceId)
             .putString("schedule_name", schedule.name)
             .putInt("duration_minutes", schedule.durationMinutes)
             .build()

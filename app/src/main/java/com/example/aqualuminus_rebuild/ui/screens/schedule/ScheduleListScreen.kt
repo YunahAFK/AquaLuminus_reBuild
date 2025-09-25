@@ -25,6 +25,7 @@ import com.example.aqualuminus_rebuild.ui.screens.schedule.components.schedule_l
 
 data class SavedSchedule(
     val id: String = "",
+    val deviceId: String = "",
     val name: String = "",
     val days: List<String> = emptyList(),
     val time: String = "",
@@ -34,7 +35,7 @@ data class SavedSchedule(
     val createdAt: Long = System.currentTimeMillis()
 ) {
     // no-argument constructor for Firestore
-    constructor() : this("", "", emptyList(), "", 30, true, null, System.currentTimeMillis())
+    constructor() : this("", "", "", emptyList(), "", 30, true, null, System.currentTimeMillis())
 }
 
 @Composable
@@ -154,7 +155,7 @@ private fun ScheduleList(
     }
 }
 
-// Data class to group schedule actions
+// data class to group schedule actions
 data class ScheduleActions(
     val onToggle: (String) -> Unit,
     val onDelete: (String) -> Unit,

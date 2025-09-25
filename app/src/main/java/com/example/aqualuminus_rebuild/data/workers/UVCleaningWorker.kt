@@ -8,6 +8,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.example.aqualuminus_rebuild.data.factory.ServiceFactory
+import com.example.aqualuminus_rebuild.data.repository.DeviceRepository
 import com.example.aqualuminus_rebuild.data.repository.ScheduleRepository
 import com.example.aqualuminus_rebuild.data.repository.UVLightRepository
 import java.util.concurrent.TimeUnit
@@ -23,16 +24,26 @@ class UVCleaningWorker(
 
     private val uvLightRepository = UVLightRepository(applicationContext)
     private val scheduleRepository = ScheduleRepository()
+    private val deviceRepository = DeviceRepository.getInstance(applicationContext)
 
     override suspend fun doWork(): Result {
         return try {
             val scheduleId = inputData.getString("schedule_id") ?: return Result.failure()
+            val deviceId = inputData.getString("device_id") ?: return Result.failure()
             val scheduleName = inputData.getString("schedule_name") ?: "UV Cleaning"
             val durationMinutes = inputData.getInt("duration_minutes", 30)
 
-            Log.d(TAG, "starting UV cleaning: $scheduleName for $durationMinutes minutes")
+            Log.d(TAG, "starting UV cleaning: $scheduleName for $durationMinutes minutes on device $deviceId")
 
             val notificationManager = ServiceFactory.getNotificationManager(applicationContext)
+
+            val device = deviceRepository.getDevice(deviceId)
+            if (device == null) {
+                notificationManager.showErrorNotification(scheduleId, scheduleName, "Device not found")
+                return Result.failure()
+            }
+
+            uvLightRepository.setDevice(device.ipAddress, device.port)
 
             notificationManager.showStartNotification(scheduleId, scheduleName, durationMinutes)
 
