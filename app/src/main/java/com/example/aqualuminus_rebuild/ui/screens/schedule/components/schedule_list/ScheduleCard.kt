@@ -52,16 +52,16 @@ fun ScheduleCard(
     var dropdownExpanded by remember { mutableStateOf(false) }
 
     Card(
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        border = BorderStroke(
+        border = androidx.compose.foundation.BorderStroke(
             1.dp,
             MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = modifier.fillMaxWidth()
+        elevation = CardDefaults.cardElevation(0.dp),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
             modifier = Modifier.padding(20.dp)

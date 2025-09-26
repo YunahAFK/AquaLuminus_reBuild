@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -40,9 +41,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.aqualuminus_rebuild.data.repository.DeviceRepository
-import com.example.aqualuminus_rebuild.ui.screens.schedule.SavedSchedule
-import com.example.aqualuminus_rebuild.ui.screens.schedule.ScheduleCleanViewModel
-import com.example.aqualuminus_rebuild.ui.screens.schedule.ScheduleCleanViewModelFactory
 import com.example.aqualuminus_rebuild.ui.screens.schedule.components.DaySelector
 import com.example.aqualuminus_rebuild.ui.screens.schedule.components.DeviceSelector
 import com.example.aqualuminus_rebuild.ui.screens.schedule.components.DurationPicker
@@ -249,9 +247,15 @@ fun ScheduleCleanScreen(
                     .fillMaxSize()
                     .padding(padding)
                     .padding(16.dp)
+                    .imePadding()
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
+                ScheduleNameInput(
+                    scheduleName = scheduleName,
+                    onScheduleNameChanged = { scheduleName = it }
+                )
+
                 DeviceSelector(
                     devices = devices,
                     selectedDeviceIds = setOf(selectedDeviceId).filterNotNull().toSet(),
@@ -277,11 +281,6 @@ fun ScheduleCleanScreen(
                 DurationPicker(
                     selectedMinutes = selectedDuration,
                     onMinutesChanged = { selectedDuration = it }
-                )
-
-                ScheduleNameInput(
-                    scheduleName = scheduleName,
-                    onScheduleNameChanged = { scheduleName = it }
                 )
             }
         }

@@ -22,13 +22,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -134,22 +134,43 @@ fun NumberPicker(
     val listState = rememberLazyListState()
     val values = range.toList()
     val itemHeight = 48.dp
+    val itemHeightPx = with(LocalDensity.current) { itemHeight.toPx() }
     val visibleItemsCount = 3
 
-    // find the index of current value
-    val currentIndex = values.indexOf(value).coerceAtLeast(0)
+    val currentIndex by remember(value) {
+        derivedStateOf { values.indexOf(value).coerceAtLeast(0) }
+    }
 
-    // track if we're programmatically scrolling
-    var isProgrammaticScroll by remember { mutableStateOf(false) }
+    // set initial position only once
+    LaunchedEffect(Unit) {
+        val targetIndex = values.indexOf(value)
+        if (targetIndex >= 0) {
+            listState.scrollToItem(targetIndex + 1) // +1 for spacer
+        }
+    }
 
-    LaunchedEffect(value) {
-        if (listState.firstVisibleItemIndex != currentIndex) {
-            isProgrammaticScroll = true
-            listState.animateScrollToItem(
-                index = currentIndex,
-                scrollOffset = 0
-            )
-            isProgrammaticScroll = false
+    // handle snapping when scroll stops
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (!listState.isScrollInProgress && listState.layoutInfo.visibleItemsInfo.isNotEmpty()) {
+            // find the item closest to center
+            val centerY = listState.layoutInfo.viewportSize.height / 2
+            val closestItem = listState.layoutInfo.visibleItemsInfo
+                .minByOrNull { visibleItem ->
+                    val itemCenterY = visibleItem.offset + visibleItem.size / 2
+                    kotlin.math.abs(itemCenterY - centerY)
+                }
+
+            closestItem?.let { item ->
+                // account for the spacer item at index 0
+                val actualIndex = item.index - 1
+                if (actualIndex in values.indices) {
+                    val newValue = values[actualIndex]
+                    // Only update if the value has actually changed and we're not scrolling
+                    if (newValue != value && !listState.isScrollInProgress) {
+                        onValueChange(newValue)
+                    }
+                }
+            }
         }
     }
 
@@ -183,7 +204,6 @@ fun NumberPicker(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxSize()
             ) {
-                // add top spacer for proper centering
                 item {
                     Spacer(modifier = Modifier.height(itemHeight))
                 }
@@ -207,7 +227,9 @@ fun NumberPicker(
                             .height(itemHeight)
                             .fillMaxWidth()
                             .padding(vertical = 12.dp)
-                            .clickable { onValueChange(item) }
+                            .clickable {
+                                onValueChange(item)
+                            }
                     )
                 }
 
@@ -245,14 +267,32 @@ fun AmPmPicker(
     val listState = rememberLazyListState()
     val itemHeight = 48.dp
 
-    // track if we're programmatically scrolling
-    var isProgrammaticScroll by remember { mutableStateOf(false) }
+    // set initial position only once
+    LaunchedEffect(Unit) {
+        listState.scrollToItem(value + 1) // +1 for spacer
+    }
 
-    LaunchedEffect(value) {
-        if (listState.firstVisibleItemIndex != value) {
-            isProgrammaticScroll = true
-            listState.animateScrollToItem(value)
-            isProgrammaticScroll = false
+    // handle snapping when scroll stops
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (!listState.isScrollInProgress && listState.layoutInfo.visibleItemsInfo.isNotEmpty()) {
+            val centerY = listState.layoutInfo.viewportSize.height / 2
+            val closestItem = listState.layoutInfo.visibleItemsInfo
+                .minByOrNull { visibleItem ->
+                    val itemCenterY = visibleItem.offset + visibleItem.size / 2
+                    kotlin.math.abs(itemCenterY - centerY)
+                }
+
+            closestItem?.let { item ->
+                // Account for the spacer item at index 0
+                val actualIndex = item.index - 1
+                if (actualIndex in options.indices) {
+                    val newValue = actualIndex
+                    // Only update if the value has actually changed and we're not scrolling
+                    if (newValue != value && !listState.isScrollInProgress) {
+                        onValueChange(newValue)
+                    }
+                }
+            }
         }
     }
 
