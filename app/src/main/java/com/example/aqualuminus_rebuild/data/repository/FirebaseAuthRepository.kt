@@ -2,6 +2,7 @@ package com.example.aqualuminus_rebuild.data.repository
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.userProfileChangeRequest
 import kotlinx.coroutines.tasks.await
 
 class FirebaseAuthRepository {
@@ -26,6 +27,18 @@ class FirebaseAuthRepository {
         return try {
             val result = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
             Result.success(result.user!!)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateUserProfile(displayName: String): Result<Unit> {
+        return try {
+            val profileUpdates = userProfileChangeRequest {
+                this.displayName = displayName
+            }
+            currentUser?.updateProfile(profileUpdates)?.await()
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

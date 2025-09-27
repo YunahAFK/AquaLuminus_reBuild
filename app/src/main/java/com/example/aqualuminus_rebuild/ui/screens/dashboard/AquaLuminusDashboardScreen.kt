@@ -22,6 +22,7 @@ import com.example.aqualuminus_rebuild.ui.screens.dashboard.components.QuickActi
 fun AquaLuminusDashboardScreen(
     aquaLuminusDashboardViewModel: AquaLuminusDashboardViewModel = viewModel(),
     onLoggedOut: () -> Unit,
+    onProfileClick: () -> Unit,
     onAddDevice: () -> Unit,
     onDeviceClick: (String) -> Unit,
     onScheduleCleanClick: () -> Unit = {},
@@ -44,7 +45,7 @@ fun AquaLuminusDashboardScreen(
         uiState = uiState,
 
         /* ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ HeaderCard ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ */
-        onProfileClick = { TODO() },
+        onProfileClick = onProfileClick,
         onLogout = { aquaLuminusDashboardViewModel.logout() },
 
         /* ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ DeviceListCard ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ */

@@ -18,6 +18,7 @@ import com.example.aqualuminus_rebuild.ui.screens.dashboard.AquaLuminusDashboard
 import com.example.aqualuminus_rebuild.ui.screens.iot.AddDeviceScreen
 import com.example.aqualuminus_rebuild.ui.screens.iot.DeviceControlScreen
 import com.example.aqualuminus_rebuild.ui.screens.iot.DeviceControlViewModel
+import com.example.aqualuminus_rebuild.ui.screens.profile.ProfileScreen
 import com.example.aqualuminus_rebuild.ui.screens.schedule.ScheduleListScreen
 import com.example.aqualuminus_rebuild.ui.screens.schedule.ScheduleCleanScreen
 
@@ -25,6 +26,7 @@ sealed class Screen(val route: String) {
     object Login : Screen ("login")
     object Register : Screen("register")
     object Dashboard : Screen("dashboard")
+    object Profile : Screen("profile")
     object AddDevice : Screen("add_device")
     data object DeviceControl : Screen("device_control/{deviceId}") {
         fun createRoute(deviceId: String) = "device_control/$deviceId"
@@ -78,11 +80,16 @@ fun NavGraph(
             AquaLuminusDashboardScreen(
                 aquaLuminusDashboardViewModel = dashboardViewModel,
                 onLoggedOut = { navController.navigate(Screen.Login.route) { popUpTo(0) } },
+                onProfileClick = { navController.navigate(Screen.Profile.route) },
                 onAddDevice = { navController.navigate(Screen.AddDevice.route) },
                 onDeviceClick = { id -> navController.navigate(Screen.DeviceControl.createRoute(id)) },
                 onScheduleCleanClick = { navController.navigate(Screen.SchedulesList.route) },
                 onActivityLogClick = { navController.navigate(Screen.ActivityLog.route) }
             )
+        }
+
+        composable(Screen.Profile.route) {
+            ProfileScreen(onBackClick = { navController.popBackStack() })
         }
 
         composable(Screen.AddDevice.route) { backStackEntry ->

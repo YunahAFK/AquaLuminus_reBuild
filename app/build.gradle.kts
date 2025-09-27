@@ -13,7 +13,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.aqualuminus_rebuild"
-        minSdk = 24
+        minSdk = 25
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -71,6 +71,8 @@ dependencies {
     implementation(libs.retrofit.converter.gson)
     implementation(libs.ui)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.compose.material3.material3)
+    implementation(libs.androidx.compose.material3)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

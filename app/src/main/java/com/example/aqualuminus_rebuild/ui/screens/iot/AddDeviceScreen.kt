@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,9 +24,18 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.filled.AdsClick
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Password
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -38,6 +48,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
@@ -47,15 +58,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.wear.compose.material3.Dialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
 import com.example.aqualuminus_rebuild.data.manager.MDNSDiscoveryManager
@@ -88,6 +103,8 @@ fun AddDeviceScreen(
     var discoveredDevices by remember { mutableStateOf<List<DiscoveredDevice>>(emptyList()) }
     var discoveryManager by remember { mutableStateOf<MDNSDiscoveryManager?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showHelpDialog by remember { mutableStateOf(false) }
+    var currentHelpStep by remember { mutableIntStateOf(1) }
 
     // initialize discovery manager
     LaunchedEffect(Unit) {
@@ -107,6 +124,18 @@ fun AddDeviceScreen(
         }
     }
 
+    if (showHelpDialog) {
+        SetupGuideDialog(
+            currentStep = currentHelpStep,
+            onDismiss = {
+                showHelpDialog = false
+                currentHelpStep = 1 // reset on close
+            },
+            onNext = { if (currentHelpStep < 7) currentHelpStep++ },
+            onPrevious = { if (currentHelpStep > 1) currentHelpStep-- }
+        )
+    }
+
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -117,6 +146,14 @@ fun AddDeviceScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showHelpDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.HelpOutline,
+                            contentDescription = "Help"
                         )
                     }
                 },
@@ -213,6 +250,86 @@ fun AddDeviceScreen(
                 errorMessage = "Make sure your AquaLuminus is POWERED ON."
             }
         }
+    }
+}
+
+@Composable
+private fun SetupGuideDialog(
+    currentStep: Int,
+    onDismiss: () -> Unit,
+    onNext: () -> Unit,
+    onPrevious: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "Setup Guide",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(24.dp))
+
+                // content changes based on the current step
+                Box(modifier = Modifier.height(180.dp), contentAlignment = Alignment.Center) {
+                    when (currentStep) {
+                        1 -> StepContent(Icons.Default.AdsClick, "Press the setup button on the AquaLuminus Device. The LED will blink, indicating it's in setup mode.")
+                        2 -> StepContent(Icons.Default.Wifi, "Connect to the 'AquaLuminus-Setup' WiFi network.")
+                        3 -> StepContent(Icons.Default.Language, "Open a web browser and go to the address: 192.168.4.1")
+                        4 -> StepContent(Icons.Default.Search, "Click 'Scan WiFi' and choose your home network from the list.")
+                        5 -> StepContent(Icons.Default.Password, "Enter your WiFi password and click 'Connect'.")
+                        6 -> StepContent(Icons.Default.CheckCircle, "The page should show a success message. AquaLuminus should now be detected.")
+                        7 -> StepContent(Icons.Default.PhoneAndroid, "Tap 'Scan Again' to find your device on the network.")
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
+
+                // Navigation Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    TextButton(
+                        onClick = onPrevious,
+                        enabled = currentStep > 1
+                    ) {
+                        Text("Previous")
+                    }
+                    Button(onClick = { if (currentStep == 7) onDismiss() else onNext() }) {
+                        Text(if (currentStep == 7) "Finish" else "Next")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StepContent(icon: ImageVector, text: String) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxHeight()
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = text,
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.bodyLarge
+        )
     }
 }
 
