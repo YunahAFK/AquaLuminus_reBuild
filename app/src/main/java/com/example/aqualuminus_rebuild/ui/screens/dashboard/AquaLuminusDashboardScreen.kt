@@ -24,7 +24,8 @@ fun AquaLuminusDashboardScreen(
     onLoggedOut: () -> Unit,
     onAddDevice: () -> Unit,
     onDeviceClick: (String) -> Unit,
-    onScheduleCleanClick: () -> Unit = {}
+    onScheduleCleanClick: () -> Unit = {},
+    onActivityLogClick: () -> Unit = {}
 ) {
     val uiState by aquaLuminusDashboardViewModel.uiState.collectAsState()
     val devices by aquaLuminusDashboardViewModel.devices.collectAsState()
@@ -54,7 +55,8 @@ fun AquaLuminusDashboardScreen(
 
         /* ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ QuickActionCard ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ */
 
-        onScheduleCleanClick = onScheduleCleanClick
+        onScheduleCleanClick = onScheduleCleanClick,
+        onActivityLogClick = onActivityLogClick
 
         )
 }
@@ -74,7 +76,8 @@ private fun DashboardContent(
     onRefreshDevices: () -> Unit,
 
     /* ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ QuickActionCard ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ */
-    onScheduleCleanClick: () -> Unit
+    onScheduleCleanClick: () -> Unit,
+    onActivityLogClick: () -> Unit
 
     ) {
     Column(
@@ -99,7 +102,8 @@ private fun DashboardContent(
         )
 
         QuickActionCard(
-            onScheduleCleanClick = onScheduleCleanClick
+            onScheduleCleanClick = onScheduleCleanClick,
+            onActivityLogClick = onActivityLogClick
         )
     }
 }

@@ -330,7 +330,7 @@ private fun DiscoveryStatusCard(
                 }
             }
 
-            // Error message display
+            // error message display
             errorMessage?.let { error ->
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(

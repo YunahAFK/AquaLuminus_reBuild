@@ -15,7 +15,7 @@ import kotlin.collections.find
 import kotlin.collections.toMutableList
 
 class DeviceRepository private constructor(private val context: Context) {
-
+    private val activityLogRepository = ActivityLogRepository()
     private val _devices = MutableStateFlow<List<AquaLuminusDevice>>(emptyList())
     private val apiClient = ESP32ApiClient.getInstance()
     private val sharedPreferences: SharedPreferences =
@@ -84,6 +84,10 @@ class DeviceRepository private constructor(private val context: Context) {
                 val sensors = apiClient.getSensorData(device.ipAddress, device.port) // <-- ADD THIS LINE
                 val currentTime = System.currentTimeMillis()
 
+                if (!device.isOnline) {
+                    activityLogRepository.addLogEntry(device.id, "CONNECTION", "${device.name} is now online.")
+                }
+
                 // handle UV state changes
                 val updatedDevice = when {
                     status.uvLightOn && !device.isUVOn -> {
@@ -122,6 +126,12 @@ class DeviceRepository private constructor(private val context: Context) {
 
             } catch (e: Exception) {
                 Log.w("DeviceRepository", "device ${device.name} appears offline", e)
+
+                // Log when device goes offline after being online
+                if (device.isOnline) {
+                    activityLogRepository.addLogEntry(device.id, "CONNECTION", "${device.name} went offline.")
+                }
+
                 device.copy(isOnline = false)
             }
         }
@@ -135,6 +145,7 @@ class DeviceRepository private constructor(private val context: Context) {
         return try {
             val device = getDeviceById(deviceId) ?: return false
             apiClient.turnUVOn(device.ipAddress, device.port)
+            activityLogRepository.addLogEntry(deviceId, "UV_STATUS", "UV light turned ON manually.") // <-- ADD THIS
 
             val currentTime = System.currentTimeMillis()
             updateDeviceUVStatus(deviceId, true, uvStartTime = currentTime)
@@ -149,6 +160,7 @@ class DeviceRepository private constructor(private val context: Context) {
         return try {
             val device = getDeviceById(deviceId) ?: return false
             apiClient.turnUVOff(device.ipAddress, device.port)
+            activityLogRepository.addLogEntry(deviceId, "UV_STATUS", "UV light turned OFF manually.") // <-- ADD THIS
 
             val currentTime = System.currentTimeMillis()
             val uvDuration = device.uvStartTime?.let { currentTime - it } ?: 0L

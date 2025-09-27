@@ -10,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.aqualuminus_rebuild.data.manager.AuthState
+import com.example.aqualuminus_rebuild.ui.screens.activity_log.ActivityLogScreen
 import com.example.aqualuminus_rebuild.ui.screens.auth.login.LoginScreen
 import com.example.aqualuminus_rebuild.ui.screens.auth.register.RegisterScreen
 import com.example.aqualuminus_rebuild.ui.screens.dashboard.AquaLuminusDashboardScreen
@@ -30,6 +31,7 @@ sealed class Screen(val route: String) {
     }
     object SchedulesList : Screen("schedules_list")
     object ScheduleClean : Screen("schedule_clean")
+    object ActivityLog : Screen("activity_log")
 
 }
 
@@ -78,7 +80,8 @@ fun NavGraph(
                 onLoggedOut = { navController.navigate(Screen.Login.route) { popUpTo(0) } },
                 onAddDevice = { navController.navigate(Screen.AddDevice.route) },
                 onDeviceClick = { id -> navController.navigate(Screen.DeviceControl.createRoute(id)) },
-                onScheduleCleanClick = { navController.navigate(Screen.SchedulesList.route) }
+                onScheduleCleanClick = { navController.navigate(Screen.SchedulesList.route) },
+                onActivityLogClick = { navController.navigate(Screen.ActivityLog.route) }
             )
         }
 
@@ -144,6 +147,10 @@ fun NavGraph(
                     navController.popBackStack()
                 }
             )
+        }
+
+        composable(Screen.ActivityLog.route) {
+            ActivityLogScreen(onBackClick = { navController.popBackStack() })
         }
     }
 }

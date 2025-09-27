@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Water
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -29,7 +31,8 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun QuickActionCard(
-    onScheduleCleanClick: () -> Unit = {}
+    onScheduleCleanClick: () -> Unit = {},
+    onActivityLogClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -65,6 +68,14 @@ fun QuickActionCard(
                     iconColor = Color(0xFF10B981),
                     modifier = Modifier.weight(1f),
                     onClick = onScheduleCleanClick
+                )
+
+                QuickActionButton(
+                    icon = Icons.Filled.ListAlt,
+                    label = "Activity Log",
+                    iconColor = Color(0xFF6366F1),
+                    modifier = Modifier.weight(1f),
+                    onClick = onActivityLogClick
                 )
             }
         }
