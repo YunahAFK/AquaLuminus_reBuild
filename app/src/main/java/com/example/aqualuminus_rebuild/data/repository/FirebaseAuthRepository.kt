@@ -32,6 +32,15 @@ class FirebaseAuthRepository {
         }
     }
 
+    suspend fun sendVerificationEmail(): Result<Unit> {
+        return try {
+            currentUser?.sendEmailVerification()?.await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun updateUserProfile(displayName: String): Result<Unit> {
         return try {
             val profileUpdates = userProfileChangeRequest {
@@ -42,10 +51,6 @@ class FirebaseAuthRepository {
         } catch (e: Exception) {
             Result.failure(e)
         }
-    }
-
-    fun signOut() {
-        firebaseAuth.signOut()
     }
 
     suspend fun sendPasswordResetEmail(email: String): Result<Unit> {

@@ -8,6 +8,7 @@ import com.example.aqualuminus_rebuild.data.manager.AuthState
 import com.example.aqualuminus_rebuild.data.manager.AuthStateManager
 import com.example.aqualuminus_rebuild.data.models.AquaLuminusDevice
 import com.example.aqualuminus_rebuild.data.repository.DeviceRepository
+import com.example.aqualuminus_rebuild.data.repository.FirebaseAuthRepository
 import com.example.aqualuminus_rebuild.ui.screens.iot.DiscoveredDevice
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +24,7 @@ import kotlinx.coroutines.launch
 class AquaLuminusDashboardViewModel(application: Application) : AndroidViewModel(application) {
 
     private val authStateManager = AuthStateManager.getInstance()
+    private val authRepository = FirebaseAuthRepository()
     private val deviceRepository = DeviceRepository.getInstance(application)
 
     /* ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ General Variables --start-- ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ */
@@ -56,8 +58,9 @@ class AquaLuminusDashboardViewModel(application: Application) : AndroidViewModel
                     is AuthState.Authenticated -> {
                         _uiState.update { currentState ->
                             currentState.copy(
-                                userName = state.user.displayName ?: "⟡⋆⭒Yun-ah⋆⭒⟡", // Fallback to your original name
-                                userPhotoUrl = state.user.photoUrl?.toString()
+                                userName = state.user.displayName ?: "⟡⋆⭒Yun-ah⋆⭒⟡",
+                                userPhotoUrl = state.user.photoUrl?.toString(),
+                                isEmailVerified = state.user.isEmailVerified
                             )
                         }
                     }
@@ -73,6 +76,24 @@ class AquaLuminusDashboardViewModel(application: Application) : AndroidViewModel
                 }
             }
         }
+    }
+
+    fun resendVerificationEmail() {
+        viewModelScope.launch {
+            val result = authRepository.sendVerificationEmail()
+            result.fold(
+                onSuccess = {
+                    _uiState.update { it.copy(successMessage = "Verification Email Sent!") }
+                },
+                onFailure = {
+                    _uiState.update { it.copy(errorMessage = "Failed to send email. Please try again.") }
+                }
+            )
+        }
+    }
+
+    fun clearMessages() {
+        _uiState.update { it.copy(successMessage = null, errorMessage = null) }
     }
 
     fun logout() {
@@ -163,9 +184,6 @@ class AquaLuminusDashboardViewModel(application: Application) : AndroidViewModel
             }
         }
     }
-
-    fun turnUVOn(deviceId: String) = viewModelScope.launch { deviceRepository.turnUVOn(deviceId) }
-    fun turnUVOff(deviceId: String) = viewModelScope.launch { deviceRepository.turnUVOff(deviceId) }
 
     /* ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ DeviceListCard Functions --end-- ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ */
 

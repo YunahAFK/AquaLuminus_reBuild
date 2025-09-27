@@ -8,6 +8,7 @@ import com.example.aqualuminus_rebuild.data.repository.FirebaseAuthRepository
 import com.google.firebase.auth.userProfileChangeRequest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class RegisterViewModel : ViewModel() {
     private val authRepository = FirebaseAuthRepository()
@@ -73,23 +74,15 @@ class RegisterViewModel : ViewModel() {
                             displayName = state.username
                         }
 
-                        user.updateProfile(profileUpdates).addOnCompleteListener { task ->
-                            if (task.isSuccessful) {
-                                _uiState.value = _uiState.value.copy(
-                                    successMessage = "Account created successfully!",
-                                    isLoading = false
-                                )
-                                viewModelScope.launch {
-                                    delay(1500)
-                                    onSuccess()
-                                }
-                            } else {
-                                _uiState.value = _uiState.value.copy(
-                                    errorMessage = "Failed to update profile. Please try again.",
-                                    isLoading = false
-                                )
-                            }
-                        }
+                        user.updateProfile(profileUpdates).await()
+
+                        authRepository.sendVerificationEmail()
+
+                        _uiState.value = _uiState.value.copy(
+                            successMessage = " ",
+                            isLoading = false
+                        )
+                        onSuccess()
                     },
                     onFailure = { exception ->
                         _uiState.value = _uiState.value.copy(
