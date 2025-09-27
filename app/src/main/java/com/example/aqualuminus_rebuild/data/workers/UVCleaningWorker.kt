@@ -10,7 +10,6 @@ import androidx.work.WorkerParameters
 import com.example.aqualuminus_rebuild.data.factory.ServiceFactory
 import com.example.aqualuminus_rebuild.data.repository.DeviceRepository
 import com.example.aqualuminus_rebuild.data.repository.ScheduleRepository
-import com.example.aqualuminus_rebuild.data.repository.UVLightRepository
 import java.util.concurrent.TimeUnit
 
 class UVCleaningWorker(
@@ -22,7 +21,6 @@ class UVCleaningWorker(
         private const val TAG = "UVCleaningWorker"
     }
 
-    private val uvLightRepository = UVLightRepository(applicationContext)
     private val scheduleRepository = ScheduleRepository()
     private val deviceRepository = DeviceRepository.getInstance(applicationContext)
 
@@ -43,15 +41,12 @@ class UVCleaningWorker(
                 return Result.failure()
             }
 
-            uvLightRepository.setDevice(device.ipAddress, device.port)
-
             notificationManager.showStartNotification(scheduleId, scheduleName, durationMinutes)
 
-            val turnOnResult = uvLightRepository.turnOnUVLight()
-            if (turnOnResult.isFailure) {
+            val turnOnSuccess = deviceRepository.turnUVOn(deviceId)
+            if (!turnOnSuccess) {
                 val errorMsg = "Failed to start UV cleaning"
-                val error = turnOnResult.exceptionOrNull()?.message ?: "Unknown error"
-                Log.e(TAG, "$errorMsg: $error")
+                Log.e(TAG, "$errorMsg for device $deviceId")
 
                 notificationManager.showErrorNotification(scheduleId, scheduleName, errorMsg)
                 return Result.retry()
@@ -59,7 +54,7 @@ class UVCleaningWorker(
 
             Log.d(TAG, "UV light turned on successfully, scheduling turn-off in $durationMinutes minutes")
 
-            scheduleTurnOff(scheduleId, scheduleName, durationMinutes)
+            scheduleTurnOff(scheduleId, deviceId, scheduleName, durationMinutes)
 
             rescheduleNext(scheduleId)
 
@@ -80,13 +75,14 @@ class UVCleaningWorker(
         }
     }
 
-    private fun scheduleTurnOff(scheduleId: String, scheduleName: String, durationMinutes: Int) {
+    private fun scheduleTurnOff(scheduleId: String, deviceId: String, scheduleName: String, durationMinutes: Int) {
         try {
             val turnOffWork = OneTimeWorkRequestBuilder<UVTurnOffWorker>()
                 .setInitialDelay(durationMinutes.toLong(), TimeUnit.MINUTES)
                 .setInputData(
                     Data.Builder()
                         .putString("schedule_id", scheduleId)
+                        .putString("device_id", deviceId) // Pass the deviceId
                         .putString("schedule_name", scheduleName)
                         .build()
                 )

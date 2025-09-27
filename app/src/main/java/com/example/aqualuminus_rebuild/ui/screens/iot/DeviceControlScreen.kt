@@ -170,6 +170,11 @@ fun DeviceControlScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
+                    SensorDataCard(
+                        device = uiState.device!!,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
                     DeviceInfoCard(
                         device = uiState.device!!,
                         modifier = Modifier.fillMaxWidth()
@@ -709,6 +714,65 @@ private fun DangerZoneCard(
                     Text("Cancel")
                 }
             }
+        )
+    }
+}
+
+@Composable
+private fun SensorDataCard(
+    device: AquaLuminusDevice,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+        elevation = CardDefaults.cardElevation(0.dp),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = "Water Parameters",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                val tempText = device.temperature?.let { "%.1f°C".format(it) } ?: "-- °C"
+                val phText = device.ph?.let { "%.2f".format(it) } ?: "--"
+
+                SensorDisplay("Temperature", tempText, "🌡️")
+                SensorDisplay("pH Level", phText, "💧")
+            }
+        }
+    }
+}
+
+@Composable
+private fun SensorDisplay(label: String, value: String, icon: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = icon,
+            style = MaterialTheme.typography.headlineSmall
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

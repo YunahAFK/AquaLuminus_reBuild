@@ -13,5 +13,7 @@ data class AquaLuminusDevice(
     val totalUVTime: Long = 0,
     val version: String = "1.0",
     val lastSeen: Long = System.currentTimeMillis(),
-    val deviceType: String = "AquaLuminus"
+    val deviceType: String = "AquaLuminus",
+    val temperature: Float? = null,
+    val ph: Float? = null
 )

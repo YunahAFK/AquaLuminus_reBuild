@@ -5,7 +5,7 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.aqualuminus_rebuild.data.factory.ServiceFactory
-import com.example.aqualuminus_rebuild.data.repository.UVLightRepository
+import com.example.aqualuminus_rebuild.data.repository.DeviceRepository
 
 class UVTurnOffWorker(
     context: Context,
@@ -16,10 +16,11 @@ class UVTurnOffWorker(
         private const val TAG = "UVTurnOffWorker"
     }
 
-    private val uvLightRepository = UVLightRepository(applicationContext)
+    private val deviceRepository = DeviceRepository.getInstance(applicationContext)
 
     override suspend fun doWork(): Result {
         return try {
+            val deviceId = inputData.getString("device_id") ?: "unknown"
             val scheduleId = inputData.getString("schedule_id") ?: "unknown"
             val scheduleName = inputData.getString("schedule_name") ?: "UV Cleaning"
 
@@ -27,16 +28,15 @@ class UVTurnOffWorker(
 
             val notificationManager = ServiceFactory.getNotificationManager(applicationContext)
 
-            val result = uvLightRepository.turnOffUVLight()
-            if (result.isSuccess) {
+            // Call the repository method
+            val success = deviceRepository.turnUVOff(deviceId) // <-- CHANGE THIS
+            if (success) {
                 Log.d(TAG, "UV light turned off successfully for $scheduleName")
                 notificationManager.showCompletionNotification(scheduleId, scheduleName)
                 Result.success()
             } else {
                 val errorMsg = "Failed to turn off UV light"
-                val error = result.exceptionOrNull()?.message ?: "Unknown error"
-                Log.e(TAG, "$errorMsg for $scheduleName: $error")
-
+                Log.e(TAG, "$errorMsg for $scheduleName")
                 notificationManager.showErrorNotification(scheduleId, scheduleName, errorMsg)
                 Result.retry()
             }

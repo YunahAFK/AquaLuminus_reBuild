@@ -79,12 +79,13 @@ class DeviceRepository private constructor(private val context: Context) {
         val currentDevices = _devices.value.toMutableList()
         val updatedDevices = currentDevices.map { device ->
             try {
+                // Fetch both status and sensor data
                 val status = apiClient.getDeviceStatus(device.ipAddress, device.port)
+                val sensors = apiClient.getSensorData(device.ipAddress, device.port) // <-- ADD THIS LINE
                 val currentTime = System.currentTimeMillis()
 
-                // handle UV state changes during refresh
-                when {
-                    // UV is now ON, but wasn't before (turned on externally)
+                // handle UV state changes
+                val updatedDevice = when {
                     status.uvLightOn && !device.isUVOn -> {
                         device.copy(
                             isOnline = true,
@@ -94,7 +95,6 @@ class DeviceRepository private constructor(private val context: Context) {
                             lastSeen = currentTime
                         )
                     }
-                    // UV is now OFF, but was on before (turned off externally)
                     !status.uvLightOn && device.isUVOn -> {
                         val sessionDuration = device.uvStartTime?.let { currentTime - it } ?: 0L
                         device.copy(
@@ -105,7 +105,6 @@ class DeviceRepository private constructor(private val context: Context) {
                             lastSeen = currentTime
                         )
                     }
-                    // no UV state change, just update online status
                     else -> {
                         device.copy(
                             isOnline = true,
@@ -114,6 +113,13 @@ class DeviceRepository private constructor(private val context: Context) {
                         )
                     }
                 }
+
+                // Copy sensor data to the updated device
+                updatedDevice.copy( // <-- ADD THIS BLOCK
+                    temperature = sensors.temperature_c,
+                    ph = sensors.ph
+                )
+
             } catch (e: Exception) {
                 Log.w("DeviceRepository", "device ${device.name} appears offline", e)
                 device.copy(isOnline = false)

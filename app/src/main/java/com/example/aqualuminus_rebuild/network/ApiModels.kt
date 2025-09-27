@@ -28,3 +28,10 @@ data class DeviceInfo(
     val mac: String?,
     val hostname: String?
 )
+
+data class SensorDataResponse(
+    val temperature_c: Float?,
+    val ph: Float?,
+    val ph_voltage: Float?,
+    val turbidity_raw: Int?
+)

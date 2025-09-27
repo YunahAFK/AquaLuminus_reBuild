@@ -6,8 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,9 +22,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
 @Composable
 fun TimePicker(
@@ -92,15 +93,6 @@ fun TimePicker(
                     label = "Hour"
                 )
 
-                // Separator
-                Text(
-                    text = ":",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
-
                 // Minute Picker
                 NumberPicker(
                     value = selectedMinute,
@@ -132,43 +124,22 @@ fun NumberPicker(
     label: String = ""
 ) {
     val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
     val values = range.toList()
     val itemHeight = 48.dp
-    val itemHeightPx = with(LocalDensity.current) { itemHeight.toPx() }
     val visibleItemsCount = 3
+    val itemHeightPx = with(LocalDensity.current) { itemHeight.toPx() }
 
-    val currentIndex by remember(value) {
-        derivedStateOf { values.indexOf(value).coerceAtLeast(0) }
-    }
+    val contentPadding = PaddingValues(vertical = (itemHeight * (visibleItemsCount / 2)))
 
-    // set initial position only once
-    LaunchedEffect(Unit) {
-        val targetIndex = values.indexOf(value)
-        if (targetIndex >= 0) {
-            listState.scrollToItem(targetIndex + 1) // +1 for spacer
-        }
-    }
-
-    // handle snapping when scroll stops
     LaunchedEffect(listState.isScrollInProgress) {
-        if (!listState.isScrollInProgress && listState.layoutInfo.visibleItemsInfo.isNotEmpty()) {
-            // find the item closest to center
-            val centerY = listState.layoutInfo.viewportSize.height / 2
-            val closestItem = listState.layoutInfo.visibleItemsInfo
-                .minByOrNull { visibleItem ->
-                    val itemCenterY = visibleItem.offset + visibleItem.size / 2
-                    kotlin.math.abs(itemCenterY - centerY)
-                }
-
-            closestItem?.let { item ->
-                // account for the spacer item at index 0
-                val actualIndex = item.index - 1
-                if (actualIndex in values.indices) {
-                    val newValue = values[actualIndex]
-                    // Only update if the value has actually changed and we're not scrolling
-                    if (newValue != value && !listState.isScrollInProgress) {
-                        onValueChange(newValue)
-                    }
+        if (!listState.isScrollInProgress) {
+            val centerIndex = listState.firstVisibleItemIndex + (listState.firstVisibleItemScrollOffset / itemHeightPx).toInt()
+            val targetIndex = if (listState.firstVisibleItemScrollOffset % itemHeightPx > itemHeightPx / 2) centerIndex + 1 else centerIndex
+            if (targetIndex < values.size) {
+                onValueChange(values[targetIndex])
+                scope.launch {
+                    listState.animateScrollToItem(targetIndex)
                 }
             }
         }
@@ -201,14 +172,11 @@ fun NumberPicker(
         ) {
             LazyColumn(
                 state = listState,
+                contentPadding = contentPadding,
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxSize()
             ) {
-                item {
-                    Spacer(modifier = Modifier.height(itemHeight))
-                }
-
-                itemsIndexed(values) { index, item ->
+                itemsIndexed(values) { _, item ->
                     val isSelected = item == value
                     val alpha = if (isSelected) 1f else 0.6f
 
@@ -231,10 +199,6 @@ fun NumberPicker(
                                 onValueChange(item)
                             }
                     )
-                }
-
-                item {
-                    Spacer(modifier = Modifier.height(itemHeight))
                 }
             }
 
@@ -265,36 +229,25 @@ fun AmPmPicker(
 ) {
     val options = listOf("AM", "PM")
     val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
     val itemHeight = 48.dp
+    val itemHeightPx = with(LocalDensity.current) { itemHeight.toPx() }
+    val contentPadding = PaddingValues(vertical = (itemHeight * (3 / 2)))
 
-    // set initial position only once
-    LaunchedEffect(Unit) {
-        listState.scrollToItem(value + 1) // +1 for spacer
-    }
 
-    // handle snapping when scroll stops
     LaunchedEffect(listState.isScrollInProgress) {
-        if (!listState.isScrollInProgress && listState.layoutInfo.visibleItemsInfo.isNotEmpty()) {
-            val centerY = listState.layoutInfo.viewportSize.height / 2
-            val closestItem = listState.layoutInfo.visibleItemsInfo
-                .minByOrNull { visibleItem ->
-                    val itemCenterY = visibleItem.offset + visibleItem.size / 2
-                    kotlin.math.abs(itemCenterY - centerY)
-                }
-
-            closestItem?.let { item ->
-                // Account for the spacer item at index 0
-                val actualIndex = item.index - 1
-                if (actualIndex in options.indices) {
-                    val newValue = actualIndex
-                    // Only update if the value has actually changed and we're not scrolling
-                    if (newValue != value && !listState.isScrollInProgress) {
-                        onValueChange(newValue)
-                    }
+        if (!listState.isScrollInProgress) {
+            val centerIndex = listState.firstVisibleItemIndex + (listState.firstVisibleItemScrollOffset / itemHeightPx).toInt()
+            val targetIndex = if (listState.firstVisibleItemScrollOffset % itemHeightPx > itemHeightPx / 2) centerIndex + 1 else centerIndex
+            if (targetIndex < options.size) {
+                onValueChange(targetIndex)
+                scope.launch {
+                    listState.animateScrollToItem(targetIndex)
                 }
             }
         }
     }
+
 
     Column(
         modifier = modifier,
@@ -321,13 +274,10 @@ fun AmPmPicker(
         ) {
             LazyColumn(
                 state = listState,
+                contentPadding = contentPadding,
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxSize()
             ) {
-                item {
-                    Spacer(modifier = Modifier.height(itemHeight))
-                }
-
                 itemsIndexed(options) { index, item ->
                     val isSelected = index == value
                     val alpha = if (isSelected) 1f else 0.6f
@@ -349,10 +299,6 @@ fun AmPmPicker(
                             .padding(vertical = 12.dp)
                             .clickable { onValueChange(index) }
                     )
-                }
-
-                item {
-                    Spacer(modifier = Modifier.height(itemHeight))
                 }
             }
 
