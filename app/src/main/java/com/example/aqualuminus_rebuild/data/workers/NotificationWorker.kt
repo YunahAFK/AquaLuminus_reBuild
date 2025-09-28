@@ -22,7 +22,7 @@ class NotificationWorker(
             val durationMinutes = inputData.getInt("duration_minutes", 30)
             val cleaningStartTime = inputData.getLong("cleaning_start_time", 0)
 
-            Log.d(TAG, "showing advance notification for $scheduleName")
+            Log.d(TAG, "Showing advance notification for $scheduleName")
 
             // get notification manager from factory
             val notificationManager = ServiceFactory.getNotificationManager(applicationContext)
@@ -34,10 +34,10 @@ class NotificationWorker(
                 cleaningStartTime = cleaningStartTime
             )
 
-            Log.d(TAG, "advance notification sent successfully for $scheduleName")
+            Log.d(TAG, "Advance notification sent successfully for $scheduleName")
             Result.success()
         } catch (e: Exception) {
-            Log.e(TAG, "failed to show advance notification", e)
+            Log.e(TAG, "Failed to show advance notification", e)
             Result.failure()
         }
     }

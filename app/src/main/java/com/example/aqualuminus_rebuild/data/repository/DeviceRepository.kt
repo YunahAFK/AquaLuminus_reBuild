@@ -220,7 +220,7 @@ class DeviceRepository private constructor(private val context: Context) {
         return _devices.value.find { it.id == deviceId }
     }
 
-    private fun updateDeviceUVStatus(
+    fun updateDeviceUVStatus(
         deviceId: String,
         isUVOn: Boolean,
         uvStartTime: Long? = null,

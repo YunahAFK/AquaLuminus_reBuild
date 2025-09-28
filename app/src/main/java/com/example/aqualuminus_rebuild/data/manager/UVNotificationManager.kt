@@ -69,7 +69,7 @@ class UVNotificationManager(private val context: Context) {
         val pendingIntent = createMainActivityPendingIntent(scheduleId.hashCode())
 
         val notification = NotificationCompat.Builder(context, NotificationConstant.CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(android.R.drawable.ic_menu_info_details)
             .setContentTitle("UV Cleaning Starting Soon")
             .setContentText("$scheduleName will start at $startTimeString for $durationMinutes minutes")
             .setStyle(
@@ -90,15 +90,15 @@ class UVNotificationManager(private val context: Context) {
         Log.d(TAG, "Advance notification shown for $scheduleName")
     }
 
-    fun showStartNotification(scheduleId: String, scheduleName: String, durationMinutes: Int) {
+    fun showStartNotification(scheduleId: String, scheduleName: String) {
         val pendingIntent = createMainActivityPendingIntent(
             scheduleId.hashCode() + NotificationConstant.START_NOTIFICATION_OFFSET
         )
 
         val notification = NotificationCompat.Builder(context, NotificationConstant.CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(android.R.drawable.ic_menu_info_details)
             .setContentTitle("UV Cleaning Started")
-            .setContentText("$scheduleName is now running for $durationMinutes minutes")
+            .setContentText("$scheduleName is now running.")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
@@ -140,7 +140,7 @@ class UVNotificationManager(private val context: Context) {
         )
 
         val notification = NotificationCompat.Builder(context, NotificationConstant.CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setSmallIcon(android.R.drawable.stat_sys_warning)
             .setContentTitle("UV Cleaning Error")
             .setContentText("$scheduleName: $errorMessage")
             .setPriority(NotificationCompat.PRIORITY_HIGH)

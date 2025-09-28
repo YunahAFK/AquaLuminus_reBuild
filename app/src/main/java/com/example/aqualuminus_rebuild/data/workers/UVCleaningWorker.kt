@@ -41,7 +41,7 @@ class UVCleaningWorker(
                 return Result.failure()
             }
 
-            notificationManager.showStartNotification(scheduleId, scheduleName, durationMinutes)
+            notificationManager.showStartNotification(scheduleId, scheduleName)
 
             val turnOnSuccess = deviceRepository.turnUVOn(deviceId)
             if (!turnOnSuccess) {
@@ -54,7 +54,7 @@ class UVCleaningWorker(
 
             Log.d(TAG, "UV light turned on successfully, scheduling turn-off in $durationMinutes minutes")
 
-            scheduleTurnOff(scheduleId, deviceId, scheduleName, durationMinutes)
+            scheduleTurnOff(scheduleId, device.id, device.ipAddress, device.port, scheduleName, durationMinutes)
 
             rescheduleNext(scheduleId)
 
@@ -75,15 +75,24 @@ class UVCleaningWorker(
         }
     }
 
-    private fun scheduleTurnOff(scheduleId: String, deviceId: String, scheduleName: String, durationMinutes: Int) {
+    private fun scheduleTurnOff(
+        scheduleId: String,
+        deviceId: String,
+        ipAddress: String,
+        port: Int,
+        scheduleName: String,
+        durationMinutes: Int
+    ) {
         try {
             val turnOffWork = OneTimeWorkRequestBuilder<UVTurnOffWorker>()
                 .setInitialDelay(durationMinutes.toLong(), TimeUnit.MINUTES)
                 .setInputData(
                     Data.Builder()
                         .putString("schedule_id", scheduleId)
-                        .putString("device_id", deviceId) // Pass the deviceId
+                        .putString("device_id", deviceId)
                         .putString("schedule_name", scheduleName)
+                        .putString("ip_address", ipAddress)
+                        .putInt("port", port)
                         .build()
                 )
                 .addTag("uv_turn_off")
