@@ -138,7 +138,7 @@ class AquaLuminusDashboardViewModel(application: Application) : AndroidViewModel
                 _uiState.update { currentState ->
                     currentState.copy(
                         isLoadingDevices = false,
-                        errorMessage = "failed to load devices: ${e.message}"
+                        errorMessage = "Failed to load devices: ${e.message}"
                     )
                 }
             }
@@ -150,7 +150,7 @@ class AquaLuminusDashboardViewModel(application: Application) : AndroidViewModel
         try {
             deviceRepository.refreshDevices()
         } catch (e: Exception) {
-            _uiState.update { it.copy(errorMessage = "failed to refresh devices: ${e.message}") }
+            _uiState.update { it.copy(errorMessage = "Failed to refresh devices: ${e.message}") }
         } finally {
             _uiState.update { it.copy(isLoadingDevices = false) }
         }
@@ -158,47 +158,23 @@ class AquaLuminusDashboardViewModel(application: Application) : AndroidViewModel
 
     fun addDevice(discoveredDevice: DiscoveredDevice) {
         viewModelScope.launch {
-            Log.d("DashboardVM","addDevice called for ${discoveredDevice.id}")
+            Log.d("DashboardVM","AddDevice called for ${discoveredDevice.id}")
             try {
                 _uiState.update { it.copy(isLoadingDevices = true, errorMessage = null) }
                 val aqua = discoveredDevice.toAquaLuminusDevice()
                 deviceRepository.addDevice(aqua)
-                Log.d("DashboardVM","deviceRepository.addDevice completed for ${aqua.id}")
+                Log.d("DashboardVM","DeviceRepository.AddDevice completed for ${aqua.id}")
                 _uiState.update { it.copy(isLoadingDevices = false) }
             } catch (e: Exception) {
-                Log.e("DashboardVM","addDevice failed", e)
+                Log.e("DashboardVM","AddDevice failed", e)
                 _uiState.update {
                     it.copy(isLoadingDevices = false,
-                        errorMessage = "failed to add device: ${e.message}")
+                        errorMessage = "Failed to add device: ${e.message}")
                 }
             }
         }
     }
-
-    fun removeDevice(deviceId: String) {
-        viewModelScope.launch {
-            try {
-                deviceRepository.removeDevice(deviceId)
-            } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = "failed to remove device: ${e.message}") }
-            }
-        }
-    }
-
     /* ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ DeviceListCard Functions --end-- ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ */
-
-    /* ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ Utility Functions --start-- ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ */
-
-    fun clearError() {
-        _uiState.update { it.copy(errorMessage = null) }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        // clean up any resources if needed
-    }
-
-    /* ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ Utility Functions --end-- ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ */
 }
 
 private fun DiscoveredDevice.toAquaLuminusDevice(): AquaLuminusDevice {

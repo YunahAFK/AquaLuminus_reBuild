@@ -17,7 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Refresh
@@ -41,11 +41,11 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -63,9 +63,9 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeviceControlScreen(
+    modifier: Modifier = Modifier,
     onBackClick: () -> Unit,
-    deviceControlViewModel: DeviceControlViewModel = viewModel(),
-    modifier: Modifier = Modifier
+    deviceControlViewModel: DeviceControlViewModel = viewModel()
 ) {
     val uiState by deviceControlViewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -85,7 +85,7 @@ fun DeviceControlScreen(
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back"
                         )
                     }
@@ -304,13 +304,13 @@ private fun UVControlCard(
     val uvLightOn = device.isUVOn
     val isConnected = device.isOnline
 
-    // Timer state for tracking UV light duration
-    var currentTime by remember { mutableStateOf(System.currentTimeMillis()) }
+    // timer state for tracking UV light duration
+    var currentTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
-    // Update current time every second when UV is on
+    // update current time every second when UV is on
     LaunchedEffect(uvLightOn) {
         if (uvLightOn) {
-            while (uvLightOn) {
+            while (true) {
                 kotlinx.coroutines.delay(1000)
                 currentTime = System.currentTimeMillis()
             }
@@ -322,7 +322,7 @@ private fun UVControlCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        border = androidx.compose.foundation.BorderStroke(
+        border = BorderStroke(
             1.dp,
             if (isConnected)
                 MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
@@ -398,7 +398,7 @@ private fun UVControlCard(
                             else
                                 MaterialTheme.colorScheme.onSurfaceVariant
                         ),
-                        border = androidx.compose.foundation.BorderStroke(
+                        border = BorderStroke(
                             1.dp,
                             if (isConnected && uvLightOn)
                                 MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
@@ -415,7 +415,7 @@ private fun UVControlCard(
             Spacer(modifier = Modifier.height(16.dp))
 
             // UV Timer Display
-            if (uvLightOn || (device.uvStartTime != null && !uvLightOn)) {
+            if (uvLightOn || (device.uvStartTime != null)) {
                 UVTimerSection(
                     device = device,
                     currentTime = currentTime,
@@ -451,7 +451,7 @@ private fun UVControlCard(
                     colors = CardDefaults.cardColors(
                         containerColor = Color.Red.copy(alpha = 0.1f)
                     ),
-                    border = androidx.compose.foundation.BorderStroke(
+                    border = BorderStroke(
                         1.dp,
                         Color.Red.copy(alpha = 0.2f)
                     ),
@@ -536,7 +536,7 @@ private fun UVTimerSection(
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "$formattedTime",
+                    text = formattedTime,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
                 )
@@ -672,7 +672,7 @@ private fun DangerZoneCard(
                 colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
                     contentColor = MaterialTheme.colorScheme.error
                 ),
-                border = androidx.compose.foundation.BorderStroke(
+                border = BorderStroke(
                     1.dp,
                     MaterialTheme.colorScheme.error
                 )
@@ -708,7 +708,7 @@ private fun DangerZoneCard(
                 }
             },
             dismissButton = {
-                androidx.compose.material3.TextButton(
+                TextButton(
                     onClick = { showConfirmDialog = false }
                 ) {
                     Text("Cancel")

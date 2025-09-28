@@ -13,8 +13,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlin.collections.filter
 import kotlin.collections.find
 import kotlin.collections.toMutableList
+import androidx.core.content.edit
 
-class DeviceRepository private constructor(private val context: Context) {
+class DeviceRepository private constructor(context: Context) {
     private val activityLogRepository = ActivityLogRepository()
     private val _devices = MutableStateFlow<List<AquaLuminusDevice>>(emptyList())
     private val apiClient = ESP32ApiClient.getInstance()
@@ -55,22 +56,22 @@ class DeviceRepository private constructor(private val context: Context) {
             // save to persistent storage
             saveDevicesToStorage(currentDevices)
 
-            Log.d("DeviceRepository", "device added and saved: ${device.name}")
+            Log.d("DeviceRepository", "Device added and saved: ${device.name}")
 
         } catch (e: Exception) {
-            Log.e("DeviceRepository", "failed to add device: ${device.name}", e)
+            Log.e("DeviceRepository", "Failed to add device: ${device.name}", e)
             throw e
         }
     }
 
-    suspend fun removeDevice(deviceId: String) {
+    fun removeDevice(deviceId: String) {
         val currentDevices = _devices.value.filter { it.id != deviceId }
         _devices.value = currentDevices
 
         // save to persistent storage
         saveDevicesToStorage(currentDevices)
 
-        Log.d("DeviceRepository", "device removed and saved: $deviceId")
+        Log.d("DeviceRepository", "Device removed and saved: $deviceId")
     }
 
     suspend fun refreshDevices() {
@@ -79,9 +80,9 @@ class DeviceRepository private constructor(private val context: Context) {
         val currentDevices = _devices.value.toMutableList()
         val updatedDevices = currentDevices.map { device ->
             try {
-                // Fetch both status and sensor data
+                // fetch both status and sensor data
                 val status = apiClient.getDeviceStatus(device.ipAddress, device.port)
-                val sensors = apiClient.getSensorData(device.ipAddress, device.port) // <-- ADD THIS LINE
+                val sensors = apiClient.getSensorData(device.ipAddress, device.port)
                 val currentTime = System.currentTimeMillis()
 
                 if (!device.isOnline) {
@@ -118,16 +119,14 @@ class DeviceRepository private constructor(private val context: Context) {
                     }
                 }
 
-                // Copy sensor data to the updated device
-                updatedDevice.copy( // <-- ADD THIS BLOCK
+                updatedDevice.copy(
                     temperature = sensors.temperature_c,
                     ph = sensors.ph
                 )
 
             } catch (e: Exception) {
-                Log.w("DeviceRepository", "device ${device.name} appears offline", e)
+                Log.w("DeviceRepository", "Device ${device.name} appears offline", e)
 
-                // Log when device goes offline after being online
                 if (device.isOnline) {
                     activityLogRepository.addLogEntry(device.id, "CONNECTION", "${device.name} went offline.")
                 }
@@ -151,7 +150,7 @@ class DeviceRepository private constructor(private val context: Context) {
             updateDeviceUVStatus(deviceId, true, uvStartTime = currentTime)
             true
         } catch (e: Exception) {
-            Log.e("DeviceRepository", "error turning UV ON for device: $deviceId", e)
+            Log.e("DeviceRepository", "Error turning UV ON for device: $deviceId", e)
             false
         }
     }
@@ -160,7 +159,7 @@ class DeviceRepository private constructor(private val context: Context) {
         return try {
             val device = getDeviceById(deviceId) ?: return false
             apiClient.turnUVOff(device.ipAddress, device.port)
-            activityLogRepository.addLogEntry(deviceId, "UV_STATUS", "UV light turned OFF manually.") // <-- ADD THIS
+            activityLogRepository.addLogEntry(deviceId, "UV_STATUS", "UV light turned OFF manually.")
 
             val currentTime = System.currentTimeMillis()
             val uvDuration = device.uvStartTime?.let { currentTime - it } ?: 0L
@@ -172,7 +171,7 @@ class DeviceRepository private constructor(private val context: Context) {
             )
             true
         } catch (e: Exception) {
-            Log.e("DeviceRepository", "error turning UV OFF for device: $deviceId", e)
+            Log.e("DeviceRepository", "Error turning UV OFF for device: $deviceId", e)
             false
         }
     }
@@ -182,12 +181,12 @@ class DeviceRepository private constructor(private val context: Context) {
     private fun saveDevicesToStorage(devices: List<AquaLuminusDevice>) {
         try {
             val json = gson.toJson(devices)
-            sharedPreferences.edit()
-                .putString(DEVICES_KEY, json)
-                .apply()
-            Log.d("DeviceRepository", "devices saved to storage: ${devices.size} devices")
+            sharedPreferences.edit {
+                putString(DEVICES_KEY, json)
+            }
+            Log.d("DeviceRepository", "Devices saved to storage: ${devices.size} devices")
         } catch (e: Exception) {
-            Log.e("DeviceRepository", "failed to save devices to storage", e)
+            Log.e("DeviceRepository", "Failed to save devices to storage", e)
         }
     }
 
@@ -198,12 +197,12 @@ class DeviceRepository private constructor(private val context: Context) {
                 val type = object : TypeToken<List<AquaLuminusDevice>>() {}.type
                 val savedDevices: List<AquaLuminusDevice> = gson.fromJson(json, type)
                 _devices.value = savedDevices
-                Log.d("DeviceRepository", "devices loaded from storage: ${savedDevices.size} devices")
+                Log.d("DeviceRepository", "Devices loaded from storage: ${savedDevices.size} devices")
             } else {
-                Log.d("DeviceRepository", "no saved devices found")
+                Log.d("DeviceRepository", "No saved devices found")
             }
         } catch (e: Exception) {
-            Log.e("DeviceRepository", "failed to load devices from storage", e)
+            Log.e("DeviceRepository", "Failed to load devices from storage", e)
             _devices.value = emptyList()
         }
     }
@@ -244,7 +243,7 @@ class DeviceRepository private constructor(private val context: Context) {
             _devices.value = currentDevices
             saveDevicesToStorage(currentDevices)
 
-            Log.d("DeviceRepository", "updated UV status for device $deviceId: UV=$isUVOn, " +
+            Log.d("DeviceRepository", "Updated UV status for device $deviceId: UV=$isUVOn, " +
                     "StartTime=${uvStartTime ?: currentDevice.uvStartTime}, " +
                     "EndTime=${uvEndTime ?: currentDevice.uvEndTime}")
         }

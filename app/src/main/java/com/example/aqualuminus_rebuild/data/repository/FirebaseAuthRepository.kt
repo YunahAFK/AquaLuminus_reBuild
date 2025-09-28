@@ -11,9 +11,6 @@ class FirebaseAuthRepository {
     val currentUser: FirebaseUser?
         get() = firebaseAuth.currentUser
 
-    val isUserLoggedIn: Boolean
-        get() = currentUser != null
-
     suspend fun signInWithEmailAndPassword(email: String, password: String): Result<FirebaseUser> {
         return try {
             val result = firebaseAuth.signInWithEmailAndPassword(email, password).await()

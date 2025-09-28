@@ -2,7 +2,6 @@ package com.example.aqualuminus_rebuild.ui.screens.activity_log
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.aqualuminus_rebuild.data.models.ActivityLog
 import com.example.aqualuminus_rebuild.data.repository.ActivityLogRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn

@@ -9,14 +9,14 @@ import java.util.concurrent.TimeUnit
 
 class ESP32ApiClient private constructor() {
 
-    // A single, reusable OkHttpClient for all connections
+    // a single, reusable OkHttpClient for all connections
     private val okHttpClient = OkHttpClient.Builder()
         .connectTimeout(5, TimeUnit.SECONDS)
         .readTimeout(5, TimeUnit.SECONDS)
         .writeTimeout(5, TimeUnit.SECONDS)
         .build()
 
-    // Cache for service instances to avoid recreating them for the same IP
+    // cache for service instances to avoid recreating them for the same IP
     private val serviceCache = ConcurrentHashMap<String, DeviceApiService>()
 
     private fun getService(ipAddress: String, port: Int): DeviceApiService {

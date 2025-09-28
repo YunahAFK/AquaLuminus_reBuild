@@ -6,7 +6,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.aqualuminus_rebuild.data.repository.FirebaseAuthRepository
 import com.google.firebase.auth.userProfileChangeRequest
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 

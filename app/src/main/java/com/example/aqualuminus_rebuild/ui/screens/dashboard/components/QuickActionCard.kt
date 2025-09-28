@@ -13,8 +13,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.ListAlt
-import androidx.compose.material.icons.filled.Water
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -71,7 +69,7 @@ fun QuickActionCard(
                 )
 
                 QuickActionButton(
-                    icon = Icons.Filled.ListAlt,
+                    icon = Icons.AutoMirrored.Filled.ListAlt,
                     label = "Activity Log",
                     iconColor = Color(0xFF6366F1),
                     modifier = Modifier.weight(1f),

@@ -17,7 +17,6 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -41,39 +40,49 @@ android {
     }
 }
 
-    kotlin {
+kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_11)
     }
 }
 
 dependencies {
+    // Platforms
     implementation(platform(libs.androidx.compose.bom))
     implementation(platform(libs.firebase.bom))
-    implementation(libs.accompanist.systemuicontroller)
+
+    // AndroidX
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.navigation.runtime.ktx)
+    implementation(libs.androidx.work.runtime.ktx)
+
+    // Compose
+    implementation(libs.accompanist.systemuicontroller)
     implementation(libs.androidx.material.icons.core)
     implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.material3)
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
-    implementation(libs.androidx.navigation.runtime.ktx)
-    implementation(libs.androidx.navigation.compose)
-    implementation(libs.coil.compose)
+
+    // Firebase
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
-    implementation(libs.material3)
+
+    // Network
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
-    implementation(libs.ui)
-    implementation(libs.androidx.work.runtime.ktx)
-    implementation(libs.androidx.compose.material3.material3)
-    implementation(libs.androidx.compose.material3)
-    testImplementation(libs.junit)
+
+    // Other
+    implementation(libs.coil.compose)
+    implementation(libs.paho.android.service)
+
+    // Testing
+    testImplementation(libs.junit4)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
