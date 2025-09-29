@@ -29,10 +29,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -47,7 +44,6 @@ import com.example.aqualuminus_rebuild.ui.screens.schedule.components.DurationPi
 import com.example.aqualuminus_rebuild.ui.screens.schedule.components.ScheduleBottomBar
 import com.example.aqualuminus_rebuild.ui.screens.schedule.components.ScheduleNameInput
 import com.example.aqualuminus_rebuild.ui.screens.schedule.components.TimePicker
-import java.util.Calendar
 
 @Composable
 fun ScheduleCleanScreen(
@@ -58,88 +54,56 @@ fun ScheduleCleanScreen(
     val viewModel: ScheduleCleanViewModel = viewModel(
         factory = ScheduleCleanViewModelFactory(context = context)
     )
-    val deviceRepository = DeviceRepository.getInstance(context)
-    val devices by deviceRepository.getAllDevices().collectAsState(initial = emptyList())
 
-    val isEditMode = scheduleId != null
-    val currentTime = Calendar.getInstance()
-
-    // state variables for form inputs
-    var selectedHour by remember { mutableIntStateOf(currentTime.get(Calendar.HOUR)) }
-    var selectedMinute by remember { mutableIntStateOf(currentTime.get(Calendar.MINUTE)) }
-    var selectedAmPm by remember { mutableIntStateOf(if (currentTime.get(Calendar.AM_PM) == Calendar.AM) 0 else 1) }
-    var selectedDays by remember { mutableStateOf(setOf<Int>()) }
-    var selectedDeviceId by remember { mutableStateOf<String?>(null) }
-    var scheduleName by remember { mutableStateOf("") }
-    var selectedDuration by remember { mutableIntStateOf(30) } // Default 30 minutes
-
-    val daysFullNames = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    // observe ViewModel states
+    /* ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ STATE COLLECTION ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ */
+    val formState by viewModel.formState.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val isLoadingSchedule by viewModel.isLoadingSchedule.collectAsState()
     val currentSchedule by viewModel.currentSchedule.collectAsState()
     val saveResult by viewModel.saveResult.collectAsState()
     val error by viewModel.error.collectAsState()
 
-    // load existing schedule if in edit mode
+    val deviceRepository = DeviceRepository.getInstance(context)
+    val devices by deviceRepository.getAllDevices().collectAsState(initial = emptyList())
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val isEditMode = scheduleId != null
+
+    /* ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ SIDE EFFECTS ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ */
+
+    // load schedule data when entering edit mode
     LaunchedEffect(scheduleId) {
-        if (scheduleId != null) {
-            viewModel.loadSchedule(scheduleId)
+        if (isEditMode) {
+            viewModel.loadSchedule(scheduleId!!)
         }
     }
 
-    // populate form with existing schedule data
+    // populate the form once the schedule data is loaded
     LaunchedEffect(currentSchedule) {
-        currentSchedule?.let { schedule ->
-            scheduleName = schedule.name
-            selectedDuration = schedule.durationMinutes
-            selectedDeviceId = schedule.deviceId
-
-            // parse time (stored as 24-hour format)
-            val timeParts = schedule.time.split(":")
-            if (timeParts.size == 2) {
-                val hour24 = timeParts[0].toIntOrNull() ?: 12
-                val minute = timeParts[1].toIntOrNull() ?: 0
-
-                // convert to 12-hour format for display
-                selectedAmPm = if (hour24 >= 12) 1 else 0 // 0 = AM, 1 = PM
-                selectedHour = when {
-                    hour24 == 0 -> 12 // 00:xx = 12:xx AM
-                    hour24 > 12 -> hour24 - 12 // 13:xx+ = 1:xx+ PM
-                    else -> hour24 // 1-12 stays the same
-                }
-                selectedMinute = minute
-            }
-
-            // convert selected days to indices
-            val dayIndices = schedule.days.mapNotNull { dayName ->
-                daysFullNames.indexOf(dayName).takeIf { it >= 0 }
-            }.toSet()
-            selectedDays = dayIndices
+        currentSchedule?.let {
+            viewModel.populateFormForEdit(it)
         }
     }
 
-    // handle save result
+    // show a snackbar on save success or failure
     LaunchedEffect(saveResult) {
-        when (saveResult) {
+        when (val result = saveResult) {
             is ScheduleCleanViewModel.SaveResult.Success -> {
-                val message = if (isEditMode) "Schedule Updated Successfully!" else "Schedule Saved Successfully!"
+                val message = if (isEditMode) "Schedule Updated!" else "Schedule Saved!"
                 snackbarHostState.showSnackbar(message)
                 viewModel.clearSaveResult()
-                viewModel.clearCurrentSchedule() // clear current schedule
+                viewModel.clearCurrentSchedule()
                 onBackClick()
             }
             is ScheduleCleanViewModel.SaveResult.Error -> {
-                snackbarHostState.showSnackbar("Error: ${(saveResult as ScheduleCleanViewModel.SaveResult.Error).message}")
+                snackbarHostState.showSnackbar("Error: ${result.message}")
                 viewModel.clearSaveResult()
             }
-            null -> { /* no action needed */ }
+            null -> { /* min_ju is sleeping */ }
         }
     }
 
-    // handle errors
+    // show a snackbar for any other general errors
     LaunchedEffect(error) {
         error?.let {
             snackbarHostState.showSnackbar("Error: $it")
@@ -147,44 +111,23 @@ fun ScheduleCleanScreen(
         }
     }
 
-    // clean up when leaving screen
+    // clean up the ViewModel state when the screen is left
     DisposableEffect(Unit) {
         onDispose {
             viewModel.clearCurrentSchedule()
         }
     }
 
+    /* ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ EVENT HANDLERS ⟡ ⋆⭒˚｡⋆Yun-ah⟡ ⋆⭒˚｡⋆ */
     val onSaveClick = {
-        // Convert 12-hour format to 24-hour format for storage
-        val hour24 = when {
-            selectedAmPm == 0 && selectedHour == 12 -> 0 // 12 AM = 00
-            selectedAmPm == 1 && selectedHour != 12 -> selectedHour + 12 // PM (not 12)
-            else -> selectedHour // AM (not 12) or 12 PM
-        }
-
-        val timeString = String.format("%02d:%02d", hour24, selectedMinute)
-        val selectedDayNames = selectedDays.sorted().map { daysFullNames[it] }
-
-        val schedule = SavedSchedule(
-            id = scheduleId ?: "", // use existing ID for updates, empty for new schedules
-            deviceId = selectedDeviceId ?: "",
-            name = scheduleName.ifBlank { "Untitled Schedule" },
-            days = selectedDayNames,
-            time = timeString,
-            durationMinutes = selectedDuration,
-            isActive = currentSchedule?.isActive ?: true // preserve active state or default to true
+        val schedule = buildScheduleFromState(
+            formState = formState,
+            isEditMode = isEditMode,
+            scheduleId = scheduleId,
+            currentIsActive = currentSchedule?.isActive
         )
 
-        Log.d("ScheduleClean", "Saving schedule (Edit mode: $isEditMode):")
-        Log.d("ScheduleClean", "ID: ${schedule.id}")
-        Log.d("ScheduleClean", "Device ID: ${schedule.deviceId}")
-        Log.d("ScheduleClean", "Time: $timeString (24-hour format)")
-        Log.d("ScheduleClean", "Days: ${selectedDayNames.joinToString(", ")}")
-        Log.d("ScheduleClean", "Name: ${schedule.name}")
-        Log.d("ScheduleClean", "Duration: $selectedDuration minutes")
-
-        // use appropriate method based on edit mode
-        if (isEditMode && scheduleId != null) {
+        if (isEditMode) {
             viewModel.updateSchedule(schedule)
         } else {
             viewModel.saveSchedule(schedule)
@@ -204,10 +147,7 @@ fun ScheduleCleanScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -220,17 +160,14 @@ fun ScheduleCleanScreen(
             ScheduleBottomBar(
                 onCancelClick = onBackClick,
                 onSaveClick = onSaveClick,
-                isSaveEnabled = selectedDays.isNotEmpty() && !isLoading && !isLoadingSchedule,
+                isSaveEnabled = formState.selectedDays.isNotEmpty() && formState.selectedDeviceId != null && !isLoading && !isLoadingSchedule,
                 saveButtonText = if (isEditMode) "Update" else "Save"
             )
         }
     ) { padding ->
         if (isLoadingSchedule && isEditMode) {
-            // show loading indicator while loading schedule for edit
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier = Modifier.fillMaxSize().padding(padding),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -246,59 +183,80 @@ fun ScheduleCleanScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(16.dp)
+                    .padding(horizontal = 16.dp)
                     .imePadding()
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 ScheduleNameInput(
-                    scheduleName = scheduleName,
-                    onScheduleNameChanged = { scheduleName = it }
+                    scheduleName = formState.scheduleName,
+                    onScheduleNameChanged = viewModel::onScheduleNameChanged
                 )
-
                 DeviceSelector(
                     devices = devices,
-                    selectedDeviceIds = setOf(selectedDeviceId).filterNotNull().toSet(),
-                    onDeviceSelected = { deviceId ->
-                        selectedDeviceId = if (selectedDeviceId == deviceId) null else deviceId
-                    }
+                    selectedDeviceIds = setOf(formState.selectedDeviceId).filterNotNull().toSet(),
+                    onDeviceSelected = viewModel::onDeviceSelected
                 )
-
                 DaySelector(
-                    selectedDays = selectedDays,
-                    onDaysChanged = { selectedDays = it }
+                    selectedDays = formState.selectedDays,
+                    onDaysChanged = viewModel::onDaysChanged
                 )
-
                 TimePicker(
-                    selectedHour = selectedHour,
-                    selectedMinute = selectedMinute,
-                    selectedAmPm = selectedAmPm,
-                    onHourChanged = { selectedHour = it },
-                    onMinuteChanged = { selectedMinute = it },
-                    onAmPmChanged = { selectedAmPm = it }
+                    selectedHour = formState.selectedHour,
+                    selectedMinute = formState.selectedMinute,
+                    selectedAmPm = formState.selectedAmPm,
+                    onHourChanged = viewModel::onHourChanged,
+                    onMinuteChanged = viewModel::onMinuteChanged,
+                    onAmPmChanged = viewModel::onAmPmChanged
                 )
-
                 DurationPicker(
-                    selectedMinutes = selectedDuration,
-                    onMinutesChanged = { selectedDuration = it }
+                    selectedMinutes = formState.selectedDuration,
+                    onMinutesChanged = viewModel::onDurationChanged
                 )
             }
         }
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewScheduleCleanScreen() {
-    MaterialTheme {
-        ScheduleCleanScreen()
+/**
+ * a helper function to create a [SavedSchedule] object from the form's state.
+ */
+private fun buildScheduleFromState(
+    formState: ScheduleFormState,
+    isEditMode: Boolean,
+    scheduleId: String?,
+    currentIsActive: Boolean?
+): SavedSchedule {
+    // convert 12-hour format with AM/PM to 24-hour format for storage
+    val hour24 = when {
+        formState.selectedAmPm == 0 && formState.selectedHour == 12 -> 0 // 12 AM is 00:00
+        formState.selectedAmPm == 1 && formState.selectedHour != 12 -> formState.selectedHour + 12
+        else -> formState.selectedHour
     }
+
+    val timeString = String.format("%02d:%02d", hour24, formState.selectedMinute)
+    val daysFullNames = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+    val selectedDayNames = formState.selectedDays.sorted().map { daysFullNames[it] }
+
+    val newSchedule = SavedSchedule(
+        id = if (isEditMode) scheduleId!! else "",
+        deviceId = formState.selectedDeviceId ?: "",
+        name = formState.scheduleName.ifBlank { "Untitled Schedule" },
+        days = selectedDayNames,
+        time = timeString,
+        durationMinutes = formState.selectedDuration,
+        isActive = currentIsActive ?: true // preserve active state on edit, default to true for new
+    )
+
+    Log.d("ScheduleCleanScreen", "Built Schedule: $newSchedule")
+    return newSchedule
 }
+
 
 @Preview(showBackground = true)
 @Composable
-fun PreviewEditScheduleCleanScreen() {
+private fun PreviewScheduleCleanScreen() {
     MaterialTheme {
-        ScheduleCleanScreen(scheduleId = "sample_id")
+        ScheduleCleanScreen()
     }
 }
