@@ -108,11 +108,11 @@ class RegisterViewModel : ViewModel() {
         password: String,
         confirmPassword: String
     ): String? {
-        if (username.length < 3) return "username must be at least 3 characters long"
-        if (!username.matches(Regex("^[a-zA-Z0-9_]+$"))) return "username can only contain letters, numbers, and underscores"
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) return "enter a valid email address"
-        if (password.length < 8) return "password must be at least 8 characters long"
-        if (password != confirmPassword) return "passwords do not match"
+        if (username.length < 3) return "Username must be at least 3 characters long"
+        if (!username.matches(Regex("^[a-zA-Z0-9_]+$"))) return "Username can only contain letters, numbers, and underscores"
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) return "Enter a valid email address"
+        if (password.length < 8) return "Password must be at least 8 characters long"
+        if (password != confirmPassword) return "Passwords do not match"
         return null
     }
 }

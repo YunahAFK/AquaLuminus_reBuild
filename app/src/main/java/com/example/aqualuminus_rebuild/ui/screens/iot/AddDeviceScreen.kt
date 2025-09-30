@@ -414,7 +414,7 @@ private fun DiscoveryStatusCard(
                         text = when {
                             errorMessage != null -> "Discovery Error"
                             isScanning -> "Scanning for devices..."
-                            else -> "mDNS Device Discovery"
+                            else -> "Device Discovery"
                         },
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,

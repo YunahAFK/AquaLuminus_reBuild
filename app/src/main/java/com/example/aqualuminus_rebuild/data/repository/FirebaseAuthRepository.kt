@@ -73,6 +73,8 @@ class FirebaseAuthRepository {
                 "Password must be at least 6 characters long"
             "A network error (such as timeout, interrupted connection or unreachable host) has occurred." ->
                 "Network error. Please check your connection"
+            "The supplied auth credential is incorrect, malformed or has expired." ->
+                "Invalid email or password"
             else -> exception.message ?: "An unknown error occurred"
         }
     }

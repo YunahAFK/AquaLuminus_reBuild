@@ -1,5 +1,6 @@
 package com.example.aqualuminus_rebuild.ui.screens.dashboard.components
 
+import android.R.attr.onClick
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,13 +20,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextFieldDefaults.contentPadding
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -38,12 +42,12 @@ import com.example.aqualuminus_rebuild.data.models.AquaLuminusDevice
 
 @Composable
 fun DeviceListCard(
+    modifier: Modifier = Modifier,
     devices: List<AquaLuminusDevice>,
     isLoading: Boolean = false,
     onAddDevice: () -> Unit,
     onDeviceClick: (String) -> Unit,
-    onRefresh: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onRefresh: () -> Unit = {}
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -72,16 +76,24 @@ fun DeviceListCard(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                FilledTonalButton(
-                    onClick = onAddDevice,
-                    modifier = Modifier.size(48.dp),
-                    contentPadding = PaddingValues(0.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add Device",
-                        modifier = Modifier.size(24.dp)
-                    )
+                Row {
+                    IconButton(onClick = onRefresh) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Refresh"
+                        )
+                    }
+                    FilledTonalButton(
+                        onClick = onAddDevice,
+                        modifier = Modifier.size(48.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add Device",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
             }
 

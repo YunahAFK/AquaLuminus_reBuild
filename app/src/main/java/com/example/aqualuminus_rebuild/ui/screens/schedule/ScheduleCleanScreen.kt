@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -192,15 +193,18 @@ fun ScheduleCleanScreen(
                     scheduleName = formState.scheduleName,
                     onScheduleNameChanged = viewModel::onScheduleNameChanged
                 )
+
                 DeviceSelector(
                     devices = devices,
                     selectedDeviceIds = setOf(formState.selectedDeviceId).filterNotNull().toSet(),
                     onDeviceSelected = viewModel::onDeviceSelected
                 )
+
                 DaySelector(
                     selectedDays = formState.selectedDays,
                     onDaysChanged = viewModel::onDaysChanged
                 )
+
                 TimePicker(
                     selectedHour = formState.selectedHour,
                     selectedMinute = formState.selectedMinute,
@@ -209,10 +213,13 @@ fun ScheduleCleanScreen(
                     onMinuteChanged = viewModel::onMinuteChanged,
                     onAmPmChanged = viewModel::onAmPmChanged
                 )
+
                 DurationPicker(
                     selectedMinutes = formState.selectedDuration,
                     onMinutesChanged = viewModel::onDurationChanged
                 )
+
+                Spacer(modifier = Modifier.weight(1f))
             }
         }
     }

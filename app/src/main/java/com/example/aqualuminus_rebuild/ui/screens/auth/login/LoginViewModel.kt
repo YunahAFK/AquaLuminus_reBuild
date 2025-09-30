@@ -75,7 +75,7 @@ class LoginViewModel : ViewModel() {
     private fun validateInputs(email: String): Boolean {
         return when {
             !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
-                _uiState.value = _uiState.value.copy(errorMessage = "enter a valid email address")
+                _uiState.value = _uiState.value.copy(errorMessage = "Enter a valid email address")
                 false
             }
             else -> true
