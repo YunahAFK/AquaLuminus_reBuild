@@ -18,6 +18,7 @@ import com.example.aqualuminus_rebuild.ui.screens.dashboard.AquaLuminusDashboard
 import com.example.aqualuminus_rebuild.ui.screens.iot.AddDeviceScreen
 import com.example.aqualuminus_rebuild.ui.screens.iot.DeviceControlScreen
 import com.example.aqualuminus_rebuild.ui.screens.iot.DeviceControlViewModel
+import com.example.aqualuminus_rebuild.ui.screens.iot.SensorHistoryScreen
 import com.example.aqualuminus_rebuild.ui.screens.profile.ProfileScreen
 import com.example.aqualuminus_rebuild.ui.screens.schedule.ScheduleListScreen
 import com.example.aqualuminus_rebuild.ui.screens.schedule.ScheduleCleanScreen
@@ -30,6 +31,9 @@ sealed class Screen(val route: String) {
     object AddDevice : Screen("add_device")
     data object DeviceControl : Screen("device_control/{deviceId}") {
         fun createRoute(deviceId: String) = "device_control/$deviceId"
+    }
+    data object SensorHistory : Screen("sensor_history/{deviceId}") {
+        fun createRoute(deviceId: String) = "sensor_history/$deviceId"
     }
     object SchedulesList : Screen("schedules_list")
     object ScheduleClean : Screen("schedule_clean")
@@ -118,7 +122,24 @@ fun NavGraph(
             val deviceControlViewModel: DeviceControlViewModel = viewModel()
             DeviceControlScreen(
                 onBackClick = { navController.popBackStack() },
+                onHistoryClick = { deviceId ->
+                    navController.navigate(Screen.SensorHistory.createRoute(deviceId)) },
                 deviceControlViewModel = deviceControlViewModel
+            )
+        }
+
+        composable(
+            route = Screen.SensorHistory.route,
+            arguments = listOf(
+                navArgument("deviceId") {
+                    type = NavType.StringType
+                    }
+                )
+            ) { backStackEntry ->
+        val deviceId = backStackEntry.arguments?.getString("deviceId")
+            SensorHistoryScreen(
+                deviceId = deviceId!!,
+                onBackClick = { navController.popBackStack() }
             )
         }
 

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import com.example.aqualuminus_rebuild.data.models.AquaLuminusDevice
+import com.example.aqualuminus_rebuild.data.models.SensorHistory
 import com.example.aqualuminus_rebuild.network.ESP32ApiClient
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -17,6 +18,7 @@ import androidx.core.content.edit
 
 class DeviceRepository private constructor(context: Context) {
     private val activityLogRepository = ActivityLogRepository()
+    private val sensorHistoryRepository = SensorHistoryRepository()
     private val _devices = MutableStateFlow<List<AquaLuminusDevice>>(emptyList())
     private val apiClient = ESP32ApiClient.getInstance()
     private val sharedPreferences: SharedPreferences =
@@ -144,7 +146,16 @@ class DeviceRepository private constructor(context: Context) {
         return try {
             val device = getDeviceById(deviceId) ?: return false
             apiClient.turnUVOn(device.ipAddress, device.port)
-            activityLogRepository.addLogEntry(deviceId, "UV_STATUS", "UV light turned ON manually.") // <-- ADD THIS
+            activityLogRepository.addLogEntry(deviceId, "UV_STATUS", "UV light turned ON manually.")
+
+            val sensors = apiClient.getSensorData(device.ipAddress, device.port)
+            sensorHistoryRepository.addSensorHistory(
+                SensorHistory(
+                    deviceId = deviceId,
+                    temperature = sensors.temperature_c,
+                    ph = sensors.ph
+                )
+            )
 
             val currentTime = System.currentTimeMillis()
             updateDeviceUVStatus(deviceId, true, uvStartTime = currentTime)
@@ -160,6 +171,15 @@ class DeviceRepository private constructor(context: Context) {
             val device = getDeviceById(deviceId) ?: return false
             apiClient.turnUVOff(device.ipAddress, device.port)
             activityLogRepository.addLogEntry(deviceId, "UV_STATUS", "UV light turned OFF manually.")
+
+            val sensors = apiClient.getSensorData(device.ipAddress, device.port)
+            sensorHistoryRepository.addSensorHistory(
+                SensorHistory(
+                    deviceId = deviceId,
+                    temperature = sensors.temperature_c,
+                    ph = sensors.ph
+                )
+            )
 
             val currentTime = System.currentTimeMillis()
             val uvDuration = device.uvStartTime?.let { currentTime - it } ?: 0L

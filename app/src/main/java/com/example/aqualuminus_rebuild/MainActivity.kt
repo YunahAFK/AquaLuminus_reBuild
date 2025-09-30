@@ -21,8 +21,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.aqualuminus_rebuild.data.manager.AuthStateManager
+import com.example.aqualuminus_rebuild.data.workers.HistoryLoggingWorker
+import com.example.aqualuminus_rebuild.data.workers.SensorUpdateWorker
 import com.example.aqualuminus_rebuild.ui.navigation.NavGraph
+import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
     private val requestPermissionLauncher =
@@ -34,8 +40,10 @@ class MainActivity : ComponentActivity() {
                 // feature requires a permission that the user has denied.
             }
         }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        scheduleWorkers()
 
         setContent {
             MaterialTheme {
@@ -67,5 +75,30 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun scheduleWorkers() {
+        val workManager = WorkManager.getInstance(applicationContext)
+
+        val sensorUpdateWorkRequest = PeriodicWorkRequestBuilder<SensorUpdateWorker>(
+            15, TimeUnit.MINUTES
+        ).build()
+
+        workManager.enqueueUniquePeriodicWork(
+            "sensorUpdate",
+            ExistingPeriodicWorkPolicy.KEEP,
+            sensorUpdateWorkRequest
+        )
+
+        // schedule the history logging worker
+        val historyLoggingWorkRequest = PeriodicWorkRequestBuilder<HistoryLoggingWorker>(
+            1, TimeUnit.DAYS
+        ).build()
+
+        workManager.enqueueUniquePeriodicWork(
+            "historyLogging",
+            ExistingPeriodicWorkPolicy.KEEP,
+            historyLoggingWorkRequest
+        )
     }
 }

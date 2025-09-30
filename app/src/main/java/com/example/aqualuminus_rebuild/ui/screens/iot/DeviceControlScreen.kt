@@ -65,6 +65,7 @@ import java.util.Locale
 fun DeviceControlScreen(
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit,
+    onHistoryClick: (String) -> Unit,
     deviceControlViewModel: DeviceControlViewModel = viewModel()
 ) {
     val uiState by deviceControlViewModel.uiState.collectAsState()
@@ -172,7 +173,10 @@ fun DeviceControlScreen(
 
                     SensorDataCard(
                         device = uiState.device!!,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        onHistoryClick = {
+                            onHistoryClick(uiState.device!!.id)
+                        }
                     )
 
                     DeviceInfoCard(
@@ -721,6 +725,7 @@ private fun DangerZoneCard(
 @Composable
 private fun SensorDataCard(
     device: AquaLuminusDevice,
+    onHistoryClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -750,6 +755,10 @@ private fun SensorDataCard(
 
                 SensorDisplay("Temperature", tempText, "🌡️")
                 SensorDisplay("pH Level", phText, "💧")
+            }
+
+            TextButton(onClick = onHistoryClick, modifier = Modifier.fillMaxWidth()) {
+                Text("View History")
             }
         }
     }
