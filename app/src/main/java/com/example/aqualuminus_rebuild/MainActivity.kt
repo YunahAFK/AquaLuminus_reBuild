@@ -25,7 +25,6 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.aqualuminus_rebuild.data.manager.AuthStateManager
-import com.example.aqualuminus_rebuild.data.workers.HistoryLoggingWorker
 import com.example.aqualuminus_rebuild.data.workers.SensorUpdateWorker
 import com.example.aqualuminus_rebuild.ui.navigation.NavGraph
 import java.util.concurrent.TimeUnit
@@ -88,17 +87,6 @@ class MainActivity : ComponentActivity() {
             "sensorUpdate",
             ExistingPeriodicWorkPolicy.KEEP,
             sensorUpdateWorkRequest
-        )
-
-        // schedule the history logging worker
-        val historyLoggingWorkRequest = PeriodicWorkRequestBuilder<HistoryLoggingWorker>(
-            1, TimeUnit.DAYS
-        ).build()
-
-        workManager.enqueueUniquePeriodicWork(
-            "historyLogging",
-            ExistingPeriodicWorkPolicy.KEEP,
-            historyLoggingWorkRequest
         )
     }
 }

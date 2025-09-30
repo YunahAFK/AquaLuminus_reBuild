@@ -16,7 +16,7 @@ class SensorUpdateWorker(
         return try {
             deviceRepository.refreshDevices()
             Result.success()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Result.retry()
         }
     }
