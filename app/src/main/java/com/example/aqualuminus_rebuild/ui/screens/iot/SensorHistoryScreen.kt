@@ -80,8 +80,13 @@ private fun HistoryItem(item: SensorHistory) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
+            // safely format the timestamp, providing a fallback text if it's null
+            val formattedTimestamp = item.timestamp?.let {
+                SimpleDateFormat("MMM dd, yyyy - hh:mm a", Locale.getDefault()).format(it)
+            } ?: "Timestamp not available"
+
             Text(
-                text = SimpleDateFormat("MMM dd, yyyy - hh:mm a", Locale.getDefault()).format(item.timestamp!!),
+                text = formattedTimestamp,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -90,13 +95,18 @@ private fun HistoryItem(item: SensorHistory) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                // use the elvis operator (?:) to provide a default value if temperature is null
+                val tempText = item.temperature?.let { "%.1f°C".format(it) } ?: "-- °C"
                 Text(
-                    text = "Temperature: ${item.temperature?.let { "%.1f°C".format(it) } ?: "--"}",
+                    text = "Temperature: $tempText",
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold
                 )
+
+                // use the elvis operator (?:) to provide a default value if pH is null
+                val phText = item.ph?.let { "%.2f".format(it) } ?: "--"
                 Text(
-                    text = "pH: ${item.ph?.let { "%.2f".format(it) } ?: "--"}",
+                    text = "pH: $phText",
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold
                 )
