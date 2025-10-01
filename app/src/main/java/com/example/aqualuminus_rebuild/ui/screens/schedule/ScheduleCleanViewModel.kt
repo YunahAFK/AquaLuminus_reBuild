@@ -232,6 +232,7 @@ class ScheduleCleanViewModel(
     fun clearError() { _error.value = null }
     fun clearSaveResult() { _saveResult.value = null }
     fun clearCurrentSchedule() { _currentSchedule.value = null }
+    fun clearFormState() { _formState.value = ScheduleFormState() }
 
     sealed class SaveResult {
         object Success : SaveResult()

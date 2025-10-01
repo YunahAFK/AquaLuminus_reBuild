@@ -130,12 +130,22 @@ fun NumberPicker(
 
     val contentPadding = PaddingValues(vertical = (itemHeight * (visibleItemsCount / 2)))
 
+    LaunchedEffect(value) {
+        val index = values.indexOf(value)
+        if (index != -1) {
+            listState.scrollToItem(index)
+        }
+    }
+
     LaunchedEffect(listState.isScrollInProgress) {
         if (!listState.isScrollInProgress) {
             val centerIndex = listState.firstVisibleItemIndex + (listState.firstVisibleItemScrollOffset / itemHeightPx).toInt()
             val targetIndex = if (listState.firstVisibleItemScrollOffset % itemHeightPx > itemHeightPx / 2) centerIndex + 1 else centerIndex
             if (targetIndex < values.size) {
-                onValueChange(values[targetIndex])
+                val newValue = values[targetIndex]
+                if (newValue != value) {
+                    onValueChange(newValue)
+                }
                 scope.launch {
                     listState.animateScrollToItem(targetIndex)
                 }
@@ -232,13 +242,21 @@ fun AmPmPicker(
     val itemHeightPx = with(LocalDensity.current) { itemHeight.toPx() }
     val contentPadding = PaddingValues(vertical = (itemHeight * (3 / 2)))
 
+    LaunchedEffect(value) {
+        if (value >= 0 && value < options.size) {
+            listState.scrollToItem(value)
+        }
+    }
+
 
     LaunchedEffect(listState.isScrollInProgress) {
         if (!listState.isScrollInProgress) {
             val centerIndex = listState.firstVisibleItemIndex + (listState.firstVisibleItemScrollOffset / itemHeightPx).toInt()
             val targetIndex = if (listState.firstVisibleItemScrollOffset % itemHeightPx > itemHeightPx / 2) centerIndex + 1 else centerIndex
             if (targetIndex < options.size) {
-                onValueChange(targetIndex)
+                if (targetIndex != value) {
+                    onValueChange(targetIndex)
+                }
                 scope.launch {
                     listState.animateScrollToItem(targetIndex)
                 }

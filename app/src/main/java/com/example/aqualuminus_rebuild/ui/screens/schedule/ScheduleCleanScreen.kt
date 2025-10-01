@@ -116,6 +116,7 @@ fun ScheduleCleanScreen(
     DisposableEffect(Unit) {
         onDispose {
             viewModel.clearCurrentSchedule()
+            viewModel.clearFormState()
         }
     }
 
